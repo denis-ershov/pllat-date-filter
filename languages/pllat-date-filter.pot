@@ -1,0 +1,189 @@
+# PLLAT Date Filter
+# Copyright (C) 2025 PLLAT Date Filter
+# This file is distributed under the same license as the PLLAT Date Filter package.
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PLLAT Date Filter 1.0.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-07-04 18:09+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
+
+#: pllat-date-filter.php:XXX
+msgid "Date Filter Settings"
+msgstr ""
+
+#: pllat-date-filter.php:XXX
+msgid "Date Filter"
+msgstr ""
+
+#: pllat-date-filter.php:XXX
+msgid "PLLAT Date Filter"
+msgstr ""
+
+#: pllat-date-filter.php:XXX
+msgid "Configure date filtering for posts processed by Polylang Automatic AI Translation plugin."
+msgstr ""
+
+#: pllat-date-filter.php:XXX
+msgid "Enable Filtering"
+msgstr ""
+
+#: pllat-date-filter.php:XXX
+msgid "Enable date filtering for posts"
+msgstr ""
+
+#: pllat-date-filter.php:XXX
+msgid "Filter Type"
+msgstr ""
+
+#: pllat-date-filter.php:XXX
+msgid "From specific date"
+msgstr ""
+
+#: pllat-date-filter.php:XXX
+msgid "Date range"
+msgstr ""
+
+#: pllat-date-filter.php:XXX
+msgid "Choose filter type: from specific date or within date range"
+msgstr ""
+
+#: pllat-date-filter.php:XXX
+msgid "Start Date"
+msgstr ""
+
+#: pllat-date-filter.php:XXX
+msgid "Start date for filtering (inclusive)"
+msgstr ""
+
+#: pllat-date-filter.php:XXX
+msgid "End Date"
+msgstr ""
+
+#: pllat-date-filter.php:XXX
+msgid "End date for filtering (inclusive). Used only with \"Date range\" option"
+msgstr ""
+
+#: pllat-date-filter.php:XXX
+msgid "PLLAT Date Filter - Settings"
+msgstr ""
+
+#: pllat-date-filter.php:XXX
+msgid "Settings saved"
+msgstr ""
+
+#: pllat-date-filter.php:XXX
+msgid "Filter Settings"
+msgstr ""
+
+#: pllat-date-filter.php:XXX
+msgid "Save Settings"
+msgstr ""
+
+#: pllat-date-filter.php:XXX
+msgid "Information"
+msgstr ""
+
+#: pllat-date-filter.php:XXX
+msgid "How it works:"
+msgstr ""
+
+#: pllat-date-filter.php:XXX
+msgid "Plugin filters posts when Polylang Automatic AI Translation runs"
+msgstr ""
+
+#: pllat-date-filter.php:XXX
+msgid "\"From specific date\" - processes posts published on or after specified date"
+msgstr ""
+
+#: pllat-date-filter.php:XXX
+msgid "\"Date range\" - processes posts published between two specific dates"
+msgstr ""
+
+#: pllat-date-filter.php:XXX
+msgid "Filtering is applied automatically when enabled"
+msgstr ""
+
+#: pllat-date-filter.php:XXX
+msgid "Current settings:"
+msgstr ""
+
+#: pllat-date-filter.php:XXX
+msgid "Status:"
+msgstr ""
+
+#: pllat-date-filter.php:XXX
+msgid "Enabled"
+msgstr ""
+
+#: pllat-date-filter.php:XXX
+msgid "Disabled"
+msgstr ""
+
+#: pllat-date-filter.php:XXX
+msgid "Type:"
+msgstr ""
+
+#: pllat-date-filter.php:XXX
+msgid "Start date:"
+msgstr ""
+
+#: pllat-date-filter.php:XXX
+msgid "End date:"
+msgstr ""
+
+#: pllat-date-filter.php:XXX
+msgid "Testing"
+msgstr ""
+
+#: pllat-date-filter.php:XXX
+msgid "To check if filter is working, look at WordPress error log. When filter is applied, you will see entries like:"
+msgstr ""
+
+#: pllat-date-filter.php:XXX
+msgid "Settings location:"
+msgstr ""
+
+#: pllat-date-filter.php:XXX
+msgid "Settings are located in %s menu"
+msgstr ""
+
+#: pllat-date-filter.php:XXX
+msgid "Languages → Date Filter"
+msgstr ""
+
+#: pllat-date-filter.php:XXX
+msgid "Settings → PLLAT Date Filter"
+msgstr ""
+
+#: pllat-date-filter.php:XXX
+msgid "Note: After activating Polylang, settings will move to \"Languages\" menu"
+msgstr ""
+
+#: pllat-date-filter.php:XXX
+msgid "Log location:"
+msgstr ""
+
+#: pllat-date-filter.php:XXX
+msgid "Settings"
+msgstr ""
+
+#: pllat-date-filter.php:XXX
+msgid "Warning:"
+msgstr ""
+
+#: pllat-date-filter.php:XXX
+msgid "Polylang plugin not detected. This plugin is designed to work with Polylang Automatic AI Translation."
+msgstr ""
+
+#: pllat-date-filter.php:XXX
+msgid "Settings are located in the \"Settings\" section instead of Polylang menu."
+msgstr ""

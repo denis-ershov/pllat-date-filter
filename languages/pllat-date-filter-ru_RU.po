@@ -1,0 +1,189 @@
+# Russian translation for PLLAT Date Filter plugin
+# Copyright (C) 2025 PLLAT Date Filter
+# This file is distributed under the same license as the PLLAT Date Filter package.
+msgid ""
+msgstr ""
+"Project-Id-Version: PLLAT Date Filter 1.0.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-07-04 18:09+0000\n"
+"PO-Revision-Date: 2025-07-04 18:09+0000\n"
+"Last-Translator: \n"
+"Language-Team: Russian\n"
+"Language: ru_RU\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+"X-Generator: Poedit 3.0\n"
+
+#: pllat-date-filter.php:XXX
+msgid "Date Filter Settings"
+msgstr "Настройки фильтра дат"
+
+#: pllat-date-filter.php:XXX
+msgid "Date Filter"
+msgstr "Фильтр дат"
+
+#: pllat-date-filter.php:XXX
+msgid "PLLAT Date Filter"
+msgstr "PLLAT Фильтр дат"
+
+#: pllat-date-filter.php:XXX
+msgid "Configure date filtering for posts processed by Polylang Automatic AI Translation plugin."
+msgstr "Настройте фильтрацию по дате для постов, обрабатываемых плагином Polylang Automatic AI Translation."
+
+#: pllat-date-filter.php:XXX
+msgid "Enable Filtering"
+msgstr "Включить фильтрацию"
+
+#: pllat-date-filter.php:XXX
+msgid "Enable date filtering for posts"
+msgstr "Включить фильтрацию постов по дате"
+
+#: pllat-date-filter.php:XXX
+msgid "Filter Type"
+msgstr "Тип фильтра"
+
+#: pllat-date-filter.php:XXX
+msgid "From specific date"
+msgstr "С определенной даты"
+
+#: pllat-date-filter.php:XXX
+msgid "Date range"
+msgstr "Диапазон дат"
+
+#: pllat-date-filter.php:XXX
+msgid "Choose filter type: from specific date or within date range"
+msgstr "Выберите тип фильтра: с определенной даты или в диапазоне дат"
+
+#: pllat-date-filter.php:XXX
+msgid "Start Date"
+msgstr "Начальная дата"
+
+#: pllat-date-filter.php:XXX
+msgid "Start date for filtering (inclusive)"
+msgstr "Начальная дата для фильтрации (включительно)"
+
+#: pllat-date-filter.php:XXX
+msgid "End Date"
+msgstr "Конечная дата"
+
+#: pllat-date-filter.php:XXX
+msgid "End date for filtering (inclusive). Used only with \"Date range\" option"
+msgstr "Конечная дата для фильтрации (включительно). Используется только с опцией \"Диапазон дат\""
+
+#: pllat-date-filter.php:XXX
+msgid "PLLAT Date Filter - Settings"
+msgstr "PLLAT Фильтр дат - Настройки"
+
+#: pllat-date-filter.php:XXX
+msgid "Settings saved"
+msgstr "Настройки сохранены"
+
+#: pllat-date-filter.php:XXX
+msgid "Filter Settings"
+msgstr "Настройки фильтра"
+
+#: pllat-date-filter.php:XXX
+msgid "Save Settings"
+msgstr "Сохранить настройки"
+
+#: pllat-date-filter.php:XXX
+msgid "Information"
+msgstr "Информация"
+
+#: pllat-date-filter.php:XXX
+msgid "How it works:"
+msgstr "Как это работает:"
+
+#: pllat-date-filter.php:XXX
+msgid "Plugin filters posts when Polylang Automatic AI Translation runs"
+msgstr "Плагин фильтрует посты при запуске Polylang Automatic AI Translation"
+
+#: pllat-date-filter.php:XXX
+msgid "\"From specific date\" - processes posts published on or after specified date"
+msgstr "\"С определенной даты\" - обрабатывает посты, опубликованные в указанную дату или после неё"
+
+#: pllat-date-filter.php:XXX
+msgid "\"Date range\" - processes posts published between two specific dates"
+msgstr "\"Диапазон дат\" - обрабатывает посты, опубликованные между двумя указанными датами"
+
+#: pllat-date-filter.php:XXX
+msgid "Filtering is applied automatically when enabled"
+msgstr "Фильтрация применяется автоматически при включении"
+
+#: pllat-date-filter.php:XXX
+msgid "Current settings:"
+msgstr "Текущие настройки:"
+
+#: pllat-date-filter.php:XXX
+msgid "Status:"
+msgstr "Статус:"
+
+#: pllat-date-filter.php:XXX
+msgid "Enabled"
+msgstr "Включено"
+
+#: pllat-date-filter.php:XXX
+msgid "Disabled"
+msgstr "Отключено"
+
+#: pllat-date-filter.php:XXX
+msgid "Type:"
+msgstr "Тип:"
+
+#: pllat-date-filter.php:XXX
+msgid "Start date:"
+msgstr "Начальная дата:"
+
+#: pllat-date-filter.php:XXX
+msgid "End date:"
+msgstr "Конечная дата:"
+
+#: pllat-date-filter.php:XXX
+msgid "Testing"
+msgstr "Тестирование"
+
+#: pllat-date-filter.php:XXX
+msgid "To check if filter is working, look at WordPress error log. When filter is applied, you will see entries like:"
+msgstr "Чтобы проверить, работает ли фильтр, посмотрите в лог ошибок WordPress. При применении фильтра вы увидите записи вроде:"
+
+#: pllat-date-filter.php:XXX
+msgid "Settings location:"
+msgstr "Расположение настроек:"
+
+#: pllat-date-filter.php:XXX
+msgid "Settings are located in %s menu"
+msgstr "Настройки находятся в меню %s"
+
+#: pllat-date-filter.php:XXX
+msgid "Languages → Date Filter"
+msgstr "Языки → Фильтр дат"
+
+#: pllat-date-filter.php:XXX
+msgid "Settings → PLLAT Date Filter"
+msgstr "Настройки → PLLAT Фильтр дат"
+
+#: pllat-date-filter.php:XXX
+msgid "Note: After activating Polylang, settings will move to \"Languages\" menu"
+msgstr "Примечание: После активации Polylang настройки переместятся в меню \"Языки\""
+
+#: pllat-date-filter.php:XXX
+msgid "Log location:"
+msgstr "Расположение лога:"
+
+#: pllat-date-filter.php:XXX
+msgid "Settings"
+msgstr "Настройки"
+
+#: pllat-date-filter.php:XXX
+msgid "Warning:"
+msgstr "Предупреждение:"
+
+#: pllat-date-filter.php:XXX
+msgid "Polylang plugin not detected. This plugin is designed to work with Polylang Automatic AI Translation."
+msgstr "Плагин Polylang не обнаружен. Этот плагин предназначен для работы с Polylang Automatic AI Translation."
+
+#: pllat-date-filter.php:XXX
+msgid "Settings are located in the \"Settings\" section instead of Polylang menu."
+msgstr "Настройки находятся в разделе \"Настройки\" вместо меню Polylang."
