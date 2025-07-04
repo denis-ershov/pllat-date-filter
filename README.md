@@ -104,7 +104,6 @@ This project is licensed under the GPL v2 or later - see the [LICENSE](LICENSE) 
 ## 🙋‍♂️ Support
 
 - **Issues**: [GitHub Issues](https://github.com/denis-ershov/pllat-date-filter/issues)
-- **Documentation**: [Wiki](https://github.com/denis-ershov/pllat-date-filter/wiki)
 
 ## 🔗 Related Projects
 
