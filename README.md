@@ -75,7 +75,7 @@ define('WP_DEBUG_LOG', true);
 
 Look for entries like:
 ```
-PLLAT DATE FILTER: Applied "from date" filter >= 2024-01-01 00:00:00
+PLLAT DATE FILTER: Applied "from date" filter >= 2025-07-01 00:00:00
 ```
 
 ## 🤝 Contributing
