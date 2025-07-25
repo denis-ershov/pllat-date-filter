@@ -187,3 +187,71 @@ msgstr "Polylang plugin not detected. This plugin is designed to work with Polyl
 #: pllat-date-filter.php:XXX
 msgid "Settings are located in the \"Settings\" section instead of Polylang menu."
 msgstr "Settings are located in the \"Settings\" section instead of Polylang menu."
+
+#: pllat-date-filter.php:XXX
+msgid "Date Order"
+msgstr "Date Order"
+
+#: pllat-date-filter.php:XXX
+msgid "Ascending (oldest first)"
+msgstr "Ascending (oldest first)"
+
+#: pllat-date-filter.php:XXX
+msgid "Descending (newest first)"
+msgstr "Descending (newest first)"
+
+#: pllat-date-filter.php:XXX
+msgid "Order of posts by publication date"
+msgstr "Order of posts by publication date"
+
+#: pllat-date-filter.php:XXX
+msgid "Post Status"
+msgstr "Post Status"
+
+#: pllat-date-filter.php:XXX
+msgid "Published"
+msgstr "Published"
+
+#: pllat-date-filter.php:XXX
+msgid "Draft"
+msgstr "Draft"
+
+#: pllat-date-filter.php:XXX
+msgid "Pending Review"
+msgstr "Pending Review"
+
+#: pllat-date-filter.php:XXX
+msgid "Private"
+msgstr "Private"
+
+#: pllat-date-filter.php:XXX
+msgid "Scheduled"
+msgstr "Scheduled"
+
+#: pllat-date-filter.php:XXX
+msgid "Trash"
+msgstr "Trash"
+
+#: pllat-date-filter.php:XXX
+msgid "Select which post statuses to include in filtering. At least one status must be selected."
+msgstr "Select which post statuses to include in filtering. At least one status must be selected."
+
+#: pllat-date-filter.php:XXX
+msgid "Date order controls the sequence of post processing"
+msgstr "Date order controls the sequence of post processing"
+
+#: pllat-date-filter.php:XXX
+msgid "Post status filter allows targeting specific post types by their publication status"
+msgstr "Post status filter allows targeting specific post types by their publication status"
+
+#: pllat-date-filter.php:XXX
+msgid "Date order:"
+msgstr "Date order:"
+
+#: pllat-date-filter.php:XXX
+msgid "Post statuses:"
+msgstr "Post statuses:"
+
+#: pllat-date-filter.php:XXX
+msgid "Please select at least one post status."
+msgstr "Please select at least one post status."

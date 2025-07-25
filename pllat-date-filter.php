@@ -3,13 +3,13 @@
  * Plugin Name: PLLAT Date Filter
  * Plugin URI: https://github.com/denis-ershov/pllat-date-filter
  * Description: Date filtering functionality for Polylang Automatic AI Translation. Filter posts by date range or from specific date when running bulk translations.
- * Version: 1.0.0
+ * Version: 1.1.0
  * Author: Denis Ershov
  * License: GPL3
  * Text Domain: pllat-date-filter
  * Domain Path: /languages
  * Requires at least: 6.0
- * Tested up to: 6.4
+ * Tested up to: 6.7
  * Requires PHP: 8.1
  */
 
@@ -28,6 +28,7 @@ class PLLAT_Date_Filter {
         add_action('admin_init', array($this, 'settings_init'));
         add_action('admin_enqueue_scripts', array($this, 'enqueue_admin_scripts'));
         add_filter('posts_where', array($this, 'filter_posts_by_date'), 10, 2);
+        add_filter('posts_orderby', array($this, 'filter_posts_order'), 10, 2);
         
         // Добавляем ссылку на настройки в список плагинов
         add_filter('plugin_action_links_' . plugin_basename(__FILE__), array($this, 'add_settings_link'));
@@ -127,6 +128,22 @@ class PLLAT_Date_Filter {
             'pllat_date_filter',
             'pllat_date_filter_section'
         );
+        
+        add_settings_field(
+            'date_order',
+            __('Date Order', 'pllat-date-filter'),
+            array($this, 'date_order_render'),
+            'pllat_date_filter',
+            'pllat_date_filter_section'
+        );
+        
+        add_settings_field(
+            'post_status',
+            __('Post Status', 'pllat-date-filter'),
+            array($this, 'post_status_render'),
+            'pllat_date_filter',
+            'pllat_date_filter_section'
+        );
     }
     
     /**
@@ -188,6 +205,57 @@ class PLLAT_Date_Filter {
     }
     
     /**
+     * Поле порядка сортировки по дате
+     */
+    public function date_order_render() {
+        $options = get_option($this->option_name);
+        $date_order = isset($options['date_order']) ? $options['date_order'] : 'ASC';
+        ?>
+        <select name='<?php echo $this->option_name; ?>[date_order]' id='date_order'>
+            <option value='ASC' <?php selected($date_order, 'ASC'); ?>><?php _e('Ascending (oldest first)', 'pllat-date-filter'); ?></option>
+            <option value='DESC' <?php selected($date_order, 'DESC'); ?>><?php _e('Descending (newest first)', 'pllat-date-filter'); ?></option>
+        </select>
+        <p class="description"><?php _e('Order of posts by publication date', 'pllat-date-filter'); ?></p>
+        <?php
+    }
+    
+    /**
+     * Поле выбора статуса постов
+     */
+    public function post_status_render() {
+        $options = get_option($this->option_name);
+        $post_status = isset($options['post_status']) ? $options['post_status'] : array('publish');
+        
+        // Если post_status не массив, делаем его массивом для обратной совместимости
+        if (!is_array($post_status)) {
+            $post_status = array($post_status);
+        }
+        
+        $available_statuses = array(
+            'publish' => __('Published', 'pllat-date-filter'),
+            'draft' => __('Draft', 'pllat-date-filter'),
+            'pending' => __('Pending Review', 'pllat-date-filter'),
+            'private' => __('Private', 'pllat-date-filter'),
+            'future' => __('Scheduled', 'pllat-date-filter'),
+            'trash' => __('Trash', 'pllat-date-filter')
+        );
+        ?>
+        <fieldset>
+            <?php foreach ($available_statuses as $status => $label): ?>
+                <label>
+                    <input type='checkbox' 
+                           name='<?php echo $this->option_name; ?>[post_status][]' 
+                           value='<?php echo esc_attr($status); ?>' 
+                           <?php checked(in_array($status, $post_status)); ?>>
+                    <?php echo esc_html($label); ?>
+                </label><br>
+            <?php endforeach; ?>
+        </fieldset>
+        <p class="description"><?php _e('Select which post statuses to include in filtering. At least one status must be selected.', 'pllat-date-filter'); ?></p>
+        <?php
+    }
+    
+    /**
      * Страница настроек
      */
     public function options_page() {
@@ -232,6 +300,8 @@ class PLLAT_Date_Filter {
                                         <li><?php _e('Plugin filters posts when Polylang Automatic AI Translation runs', 'pllat-date-filter'); ?></li>
                                         <li><?php _e('"From specific date" - processes posts published on or after specified date', 'pllat-date-filter'); ?></li>
                                         <li><?php _e('"Date range" - processes posts published between two specific dates', 'pllat-date-filter'); ?></li>
+                                        <li><?php _e('Date order controls the sequence of post processing', 'pllat-date-filter'); ?></li>
+                                        <li><?php _e('Post status filter allows targeting specific post types by their publication status', 'pllat-date-filter'); ?></li>
                                         <li><?php _e('Filtering is applied automatically when enabled', 'pllat-date-filter'); ?></li>
                                     </ul>
                                     
@@ -277,6 +347,13 @@ class PLLAT_Date_Filter {
         $filter_type = isset($options['filter_type']) ? $options['filter_type'] : 'from_date';
         $start_date = isset($options['start_date']) ? $options['start_date'] : '';
         $end_date = isset($options['end_date']) ? $options['end_date'] : '';
+        $date_order = isset($options['date_order']) ? $options['date_order'] : 'ASC';
+        $post_status = isset($options['post_status']) ? $options['post_status'] : array('publish');
+        
+        // Обеспечиваем что post_status это массив
+        if (!is_array($post_status)) {
+            $post_status = array($post_status);
+        }
         
         echo '<ul>';
         echo '<li><strong>' . __('Status:', 'pllat-date-filter') . '</strong> ' . ($enabled ? __('Enabled', 'pllat-date-filter') : __('Disabled', 'pllat-date-filter')) . '</li>';
@@ -289,6 +366,28 @@ class PLLAT_Date_Filter {
         if ($filter_type === 'date_range' && $end_date) {
             echo '<li><strong>' . __('End date:', 'pllat-date-filter') . '</strong> ' . esc_html($end_date) . '</li>';
         }
+        
+        echo '<li><strong>' . __('Date order:', 'pllat-date-filter') . '</strong> ' . ($date_order === 'ASC' ? __('Ascending (oldest first)', 'pllat-date-filter') : __('Descending (newest first)', 'pllat-date-filter')) . '</li>';
+        
+        // Отображаем выбранные статусы постов
+        $status_labels = array(
+            'publish' => __('Published', 'pllat-date-filter'),
+            'draft' => __('Draft', 'pllat-date-filter'),
+            'pending' => __('Pending Review', 'pllat-date-filter'),
+            'private' => __('Private', 'pllat-date-filter'),
+            'future' => __('Scheduled', 'pllat-date-filter'),
+            'trash' => __('Trash', 'pllat-date-filter')
+        );
+        
+        $selected_labels = array();
+        foreach ($post_status as $status) {
+            if (isset($status_labels[$status])) {
+                $selected_labels[] = $status_labels[$status];
+            }
+        }
+        
+        echo '<li><strong>' . __('Post statuses:', 'pllat-date-filter') . '</strong> ' . esc_html(implode(', ', $selected_labels)) . '</li>';
+        
         echo '</ul>';
     }
     
@@ -319,6 +418,22 @@ class PLLAT_Date_Filter {
                 
                 $('#filter_type').change(toggleEndDate);
                 toggleEndDate(); // Запускаем при загрузке
+                
+                // Проверяем что выбран хотя бы один статус поста
+                function validatePostStatus() {
+                    var checkedBoxes = $('input[name=\"pllat_date_filter_settings[post_status][]\"]input:checked');
+                    if (checkedBoxes.length === 0) {
+                        alert('" . esc_js(__('Please select at least one post status.', 'pllat-date-filter')) . "');
+                        return false;
+                    }
+                    return true;
+                }
+                
+                $('form').submit(function(e) {
+                    if (!validatePostStatus()) {
+                        e.preventDefault();
+                    }
+                });
             });
         ");
     }
@@ -350,9 +465,21 @@ class PLLAT_Date_Filter {
         
         $filter_type = isset($options['filter_type']) ? $options['filter_type'] : 'from_date';
         $start_date = isset($options['start_date']) ? $options['start_date'] : '';
+        $post_status = isset($options['post_status']) ? $options['post_status'] : array('publish');
         
         if (empty($start_date)) {
             return $where;
+        }
+        
+        // Обеспечиваем что post_status это массив
+        if (!is_array($post_status)) {
+            $post_status = array($post_status);
+        }
+        
+        // Добавляем фильтр по статусу постов
+        if (!empty($post_status)) {
+            $status_placeholders = implode(',', array_fill(0, count($post_status), '%s'));
+            $where .= $wpdb->prepare(" AND {$wpdb->posts}.post_status IN ($status_placeholders)", $post_status);
         }
         
         // Применяем фильтр в зависимости от типа
@@ -361,7 +488,7 @@ class PLLAT_Date_Filter {
             $start_datetime = $start_date . ' 00:00:00';
             $where .= $wpdb->prepare(" AND {$wpdb->posts}.post_date >= %s", $start_datetime);
             
-            error_log('PLLAT DATE FILTER: Applied "from date" filter >= ' . $start_datetime);
+            error_log('PLLAT DATE FILTER: Applied "from date" filter >= ' . $start_datetime . ' with statuses: ' . implode(', ', $post_status));
             
         } elseif ($filter_type === 'date_range') {
             // В интервале дат
@@ -377,17 +504,55 @@ class PLLAT_Date_Filter {
                     $end_datetime
                 );
                 
-                error_log('PLLAT DATE FILTER: Applied "date range" filter: ' . $start_datetime . ' to ' . $end_datetime);
+                error_log('PLLAT DATE FILTER: Applied "date range" filter: ' . $start_datetime . ' to ' . $end_datetime . ' with statuses: ' . implode(', ', $post_status));
             } else {
                 // Если конечная дата не указана, работаем как "с определенной даты"
                 $start_datetime = $start_date . ' 00:00:00';
                 $where .= $wpdb->prepare(" AND {$wpdb->posts}.post_date >= %s", $start_datetime);
                 
-                error_log('PLLAT DATE FILTER: Applied "from date" filter (no end date) >= ' . $start_datetime);
+                error_log('PLLAT DATE FILTER: Applied "from date" filter (no end date) >= ' . $start_datetime . ' with statuses: ' . implode(', ', $post_status));
             }
         }
         
         return $where;
+    }
+    
+    /**
+     * Фильтр для сортировки постов по дате
+     */
+    public function filter_posts_order($orderby, $query) {
+        global $wpdb;
+        
+        // Получаем настройки
+        $options = get_option($this->option_name);
+        
+        // Проверяем, включена ли фильтрация
+        if (!isset($options['enabled']) || !$options['enabled']) {
+            return $orderby;
+        }
+        
+        // Проверяем, что это запрос содержит условия нашего фильтра
+        // (простая проверка - если в запросе есть наш фильтр дат)
+        $where_clause = $query->get('suppress_filters') ? '' : apply_filters('posts_where', '', $query);
+        if (strpos($where_clause, 'PLLAT DATE FILTER') === false && 
+            (strpos($where_clause, '_pllat_exclude_from_translation') === false && 
+             strpos($where_clause, '_pllat_translation_queue') === false)) {
+            return $orderby;
+        }
+        
+        $date_order = isset($options['date_order']) ? $options['date_order'] : 'ASC';
+        
+        // Применяем сортировку по дате
+        if (empty($orderby) || strpos($orderby, 'post_date') === false) {
+            $orderby = "{$wpdb->posts}.post_date " . $date_order;
+        } else {
+            // Если уже есть сортировка по post_date, заменяем направление
+            $orderby = preg_replace('/post_date\s+(ASC|DESC)/i', 'post_date ' . $date_order, $orderby);
+        }
+        
+        error_log('PLLAT DATE FILTER: Applied date order: ' . $date_order);
+        
+        return $orderby;
     }
     
     /**
@@ -436,7 +601,9 @@ function pllat_date_filter_activate() {
         'enabled' => 0,
         'filter_type' => 'from_date',
         'start_date' => '',
-        'end_date' => ''
+        'end_date' => '',
+        'date_order' => 'ASC',
+        'post_status' => array('publish')
     );
     
     add_option('pllat_date_filter_settings', $default_options);

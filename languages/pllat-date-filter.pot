@@ -187,3 +187,71 @@ msgstr ""
 #: pllat-date-filter.php:XXX
 msgid "Settings are located in the \"Settings\" section instead of Polylang menu."
 msgstr ""
+
+#: pllat-date-filter.php:XXX
+msgid "Date Order"
+msgstr ""
+
+#: pllat-date-filter.php:XXX
+msgid "Ascending (oldest first)"
+msgstr ""
+
+#: pllat-date-filter.php:XXX
+msgid "Descending (newest first)"
+msgstr ""
+
+#: pllat-date-filter.php:XXX
+msgid "Order of posts by publication date"
+msgstr ""
+
+#: pllat-date-filter.php:XXX
+msgid "Post Status"
+msgstr ""
+
+#: pllat-date-filter.php:XXX
+msgid "Published"
+msgstr ""
+
+#: pllat-date-filter.php:XXX
+msgid "Draft"
+msgstr ""
+
+#: pllat-date-filter.php:XXX
+msgid "Pending Review"
+msgstr ""
+
+#: pllat-date-filter.php:XXX
+msgid "Private"
+msgstr ""
+
+#: pllat-date-filter.php:XXX
+msgid "Scheduled"
+msgstr ""
+
+#: pllat-date-filter.php:XXX
+msgid "Trash"
+msgstr ""
+
+#: pllat-date-filter.php:XXX
+msgid "Select which post statuses to include in filtering. At least one status must be selected."
+msgstr ""
+
+#: pllat-date-filter.php:XXX
+msgid "Date order controls the sequence of post processing"
+msgstr ""
+
+#: pllat-date-filter.php:XXX
+msgid "Post status filter allows targeting specific post types by their publication status"
+msgstr ""
+
+#: pllat-date-filter.php:XXX
+msgid "Date order:"
+msgstr ""
+
+#: pllat-date-filter.php:XXX
+msgid "Post statuses:"
+msgstr ""
+
+#: pllat-date-filter.php:XXX
+msgid "Please select at least one post status."
+msgstr ""

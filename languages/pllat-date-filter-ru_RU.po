@@ -187,3 +187,71 @@ msgstr "Плагин Polylang не обнаружен. Этот плагин п�
 #: pllat-date-filter.php:XXX
 msgid "Settings are located in the \"Settings\" section instead of Polylang menu."
 msgstr "Настройки находятся в разделе \"Настройки\" вместо меню Polylang."
+
+#: pllat-date-filter.php:XXX
+msgid "Date Order"
+msgstr "Порядок по дате"
+
+#: pllat-date-filter.php:XXX
+msgid "Ascending (oldest first)"
+msgstr "По возрастанию (сначала старые)"
+
+#: pllat-date-filter.php:XXX
+msgid "Descending (newest first)"
+msgstr "По убыванию (сначала новые)"
+
+#: pllat-date-filter.php:XXX
+msgid "Order of posts by publication date"
+msgstr "Порядок постов по дате публикации"
+
+#: pllat-date-filter.php:XXX
+msgid "Post Status"
+msgstr "Статус записей"
+
+#: pllat-date-filter.php:XXX
+msgid "Published"
+msgstr "Опубликованные"
+
+#: pllat-date-filter.php:XXX
+msgid "Draft"
+msgstr "Черновики"
+
+#: pllat-date-filter.php:XXX
+msgid "Pending Review"
+msgstr "На модерации"
+
+#: pllat-date-filter.php:XXX
+msgid "Private"
+msgstr "Приватные"
+
+#: pllat-date-filter.php:XXX
+msgid "Scheduled"
+msgstr "Запланированные"
+
+#: pllat-date-filter.php:XXX
+msgid "Trash"
+msgstr "Корзина"
+
+#: pllat-date-filter.php:XXX
+msgid "Select which post statuses to include in filtering. At least one status must be selected."
+msgstr "Выберите статусы записей для включения в фильтрацию. Должен быть выбран хотя бы один статус."
+
+#: pllat-date-filter.php:XXX
+msgid "Date order controls the sequence of post processing"
+msgstr "Порядок по дате контролирует последовательность обработки постов"
+
+#: pllat-date-filter.php:XXX
+msgid "Post status filter allows targeting specific post types by their publication status"
+msgstr "Фильтр статуса записей позволяет выбирать определенные типы постов по их статусу публикации"
+
+#: pllat-date-filter.php:XXX
+msgid "Date order:"
+msgstr "Порядок по дате:"
+
+#: pllat-date-filter.php:XXX
+msgid "Post statuses:"
+msgstr "Статусы записей:"
+
+#: pllat-date-filter.php:XXX
+msgid "Please select at least one post status."
+msgstr "Пожалуйста, выберите хотя бы один статус записи."

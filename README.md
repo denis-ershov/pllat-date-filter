@@ -91,11 +91,49 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## 📝 Changelog
 
-### 1.0.0
-- Initial release
-- Basic date filtering functionality
-- Integration with Polylang admin menu
-- Support for "from date" and "date range" filters
+## [1.1.0] - 2024-01-15
+
+### 🚀 Added
+- **Date Order Setting**: New option to control the sequence of post processing
+  - Ascending (oldest first) - processes posts from oldest to newest
+  - Descending (newest first) - processes posts from newest to oldest
+  - Default setting: Ascending for backward compatibility
+
+- **Post Status Filter**: Enhanced filtering capabilities with post status selection
+  - Multi-select checkbox interface for choosing post statuses
+  - Available options: Published, Draft, Pending Review, Private, Scheduled, Trash
+  - Default setting: Published posts only
+  - Validation ensures at least one status is always selected
+
+### ✨ Enhanced
+- **Improved Admin Interface**: 
+  - Added new settings fields with clear descriptions
+  - Enhanced current settings display to show all active filters
+  - Better organization of settings sections
+
+- **Enhanced Logging**: 
+  - Debug log entries now include selected post statuses
+  - More detailed information about applied filters for easier troubleshooting
+
+- **JavaScript Validation**:
+  - Client-side validation prevents saving settings without post status selection
+  - Improved user experience with immediate feedback
+
+### 🔧 Technical Improvements
+- **New Filter Hook**: Added `posts_orderby` filter for date ordering functionality
+- **Backward Compatibility**: Existing installations will automatically use default values
+- **Code Optimization**: Improved array handling for post status settings
+- **Enhanced SQL Filtering**: More precise query modifications for better performance
+
+### 🌐 Localization
+- **Complete Translation Coverage**: All new strings fully translated
+  - Russian (ru_RU) translations for all new features
+  - English (en_US) base translations
+  - Updated POT template file for future translations
+
+### 🐛 Fixed
+- **Settings Display**: Improved handling of post status arrays in settings overview
+- **Form Validation**: Better error handling for edge cases in settings validation
 
 ## 📄 License
 
