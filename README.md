@@ -91,7 +91,7 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## 📝 Changelog
 
-## [1.1.0] - 2024-01-15
+## [1.1.0] - 2025-07-25
 
 ### 🚀 Added
 - **Date Order Setting**: New option to control the sequence of post processing
