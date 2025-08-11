@@ -3,7 +3,7 @@
  * Plugin Name: PLLAT Date Filter
  * Plugin URI: https://github.com/denis-ershov/pllat-date-filter
  * Description: Date filtering functionality for Polylang Automatic AI Translation. Filter posts by date range or from specific date when running bulk translations.
- * Version: 1.1.0
+ * Version: 1.1.1
  * Author: Denis Ershov
  * License: GPL3
  * Text Domain: pllat-date-filter
@@ -21,14 +21,17 @@ if (!defined('ABSPATH')) {
 class PLLAT_Date_Filter {
     
     private $option_name = 'pllat_date_filter_settings';
+    // removed legacy SQL-based detection flag
     
     public function __construct() {
         add_action('plugins_loaded', array($this, 'load_textdomain'));
         add_action('admin_menu', array($this, 'add_admin_menu'), 99); // Поздний приоритет чтобы Polylang успел загрузиться
         add_action('admin_init', array($this, 'settings_init'));
         add_action('admin_enqueue_scripts', array($this, 'enqueue_admin_scripts'));
-        add_filter('posts_where', array($this, 'filter_posts_by_date'), 10, 2);
-        add_filter('posts_orderby', array($this, 'filter_posts_order'), 10, 2);
+        
+        // Применяем фильтры через WP_Query до формирования SQL (высокий приоритет)
+        add_action('pre_get_posts', array($this, 'maybe_apply_filters'), 999);
+        add_action('parse_query', array($this, 'maybe_apply_filters'), 999);
         
         // Добавляем ссылку на настройки в список плагинов
         add_filter('plugin_action_links_' . plugin_basename(__FILE__), array($this, 'add_settings_link'));
@@ -421,7 +424,7 @@ class PLLAT_Date_Filter {
                 
                 // Проверяем что выбран хотя бы один статус поста
                 function validatePostStatus() {
-                    var checkedBoxes = $('input[name=\"pllat_date_filter_settings[post_status][]\"]input:checked');
+                    var checkedBoxes = $('input[name=\"pllat_date_filter_settings[post_status][]\"]:checked');
                     if (checkedBoxes.length === 0) {
                         alert('" . esc_js(__('Please select at least one post status.', 'pllat-date-filter')) . "');
                         return false;
@@ -439,120 +442,106 @@ class PLLAT_Date_Filter {
     }
     
     /**
-     * Основная функция фильтрации
+     * Применяем фильтры к WP_Query до генерации SQL
      */
-    public function filter_posts_by_date($where, $query) {
-        global $wpdb;
-        
-        // Получаем настройки
+    public function maybe_apply_filters($query) {
+        // Убедимся, что это именно WP_Query
+        if (!($query instanceof \WP_Query)) {
+            return;
+        }
+
+        // Настройки
         $options = get_option($this->option_name);
-        
-        // Проверяем, включена ли фильтрация
-        if (!isset($options['enabled']) || !$options['enabled']) {
-            return $where;
+        if (empty($options) || empty($options['enabled'])) {
+            return;
         }
-        
-        // Проверяем, что это SQL запрос содержит таблицу постов
-        if (strpos($where, $wpdb->posts) === false) {
-            return $where;
+
+        // Должны быть признаки запроса сборщика постов из основного плагина
+        if (!$this->is_pllat_translation_query($query)) {
+            return;
         }
-        
-        // Проверяем, что это запрос плагина перевода
-        if (strpos($where, '_pllat_exclude_from_translation') === false && 
-            strpos($where, '_pllat_translation_queue') === false) {
-            return $where;
-        }
-        
-        $filter_type = isset($options['filter_type']) ? $options['filter_type'] : 'from_date';
-        $start_date = isset($options['start_date']) ? $options['start_date'] : '';
-        $post_status = isset($options['post_status']) ? $options['post_status'] : array('publish');
-        
+
+        $filter_type = $options['filter_type'] ?? 'from_date';
+        $start_date  = $options['start_date'] ?? '';
+        $end_date    = $options['end_date'] ?? '';
+        $date_order  = strtoupper($options['date_order'] ?? 'ASC');
+        $post_status = $options['post_status'] ?? array('publish');
+
+        // Нужна хотя бы стартовая дата
         if (empty($start_date)) {
-            return $where;
+            return;
         }
-        
-        // Обеспечиваем что post_status это массив
-        if (!is_array($post_status)) {
-            $post_status = array($post_status);
+
+        // Лог перед применением
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('PLLAT DATE FILTER: detected translation query. type=' . $filter_type . ', start=' . $start_date . ', end=' . $end_date . ', order=' . $date_order . ', statuses=' . (is_array($post_status) ? implode(',', $post_status) : (string) $post_status));
         }
-        
-        // Добавляем фильтр по статусу постов
-        if (!empty($post_status)) {
-            $status_placeholders = implode(',', array_fill(0, count($post_status), '%s'));
-            $where .= $wpdb->prepare(" AND {$wpdb->posts}.post_status IN ($status_placeholders)", $post_status);
+
+        // Устанавливаем статус, если явно задан (не 'any')
+        if (!empty($post_status) && !(is_array($post_status) && in_array('any', $post_status, true)) && $post_status !== 'any') {
+            $query->set('post_status', $post_status);
         }
-        
-        // Применяем фильтр в зависимости от типа
-        if ($filter_type === 'from_date') {
-            // С определенной даты
-            $start_datetime = $start_date . ' 00:00:00';
-            $where .= $wpdb->prepare(" AND {$wpdb->posts}.post_date >= %s", $start_datetime);
-            
-            error_log('PLLAT DATE FILTER: Applied "from date" filter >= ' . $start_datetime . ' with statuses: ' . implode(', ', $post_status));
-            
-        } elseif ($filter_type === 'date_range') {
-            // В интервале дат
-            $end_date = isset($options['end_date']) ? $options['end_date'] : '';
-            
-            if (!empty($end_date)) {
-                $start_datetime = $start_date . ' 00:00:00';
-                $end_datetime = $end_date . ' 23:59:59';
-                
-                $where .= $wpdb->prepare(
-                    " AND {$wpdb->posts}.post_date >= %s AND {$wpdb->posts}.post_date <= %s",
-                    $start_datetime,
-                    $end_datetime
-                );
-                
-                error_log('PLLAT DATE FILTER: Applied "date range" filter: ' . $start_datetime . ' to ' . $end_datetime . ' with statuses: ' . implode(', ', $post_status));
-            } else {
-                // Если конечная дата не указана, работаем как "с определенной даты"
-                $start_datetime = $start_date . ' 00:00:00';
-                $where .= $wpdb->prepare(" AND {$wpdb->posts}.post_date >= %s", $start_datetime);
-                
-                error_log('PLLAT DATE FILTER: Applied "from date" filter (no end date) >= ' . $start_datetime . ' with statuses: ' . implode(', ', $post_status));
+
+        // Устанавливаем сортировку
+        $query->set('orderby', 'date');
+        $query->set('order', $date_order === 'DESC' ? 'DESC' : 'ASC');
+
+        // Устанавливаем date_query
+        $date_query = array('inclusive' => true);
+        if ($filter_type === 'date_range' && !empty($end_date)) {
+            $date_query['after']  = $start_date;
+            $date_query['before'] = $end_date;
+        } else {
+            $date_query['after'] = $start_date;
+        }
+        $query->set('date_query', array($date_query));
+
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('PLLAT DATE FILTER: applied date_query=' . json_encode($query->get('date_query')) . ', post_status=' . json_encode($query->get('post_status')) . ', order=' . $query->get('order'));
+        }
+    }
+
+    /**
+     * Определяем, что это запрос сбора постов для перевода в PLLAT
+     */
+    private function is_pllat_translation_query(\WP_Query $query): bool {
+        // Эти флаги характерны для Post_Collector::get_query_args
+        if ($query->get('no_found_rows') !== true) {
+            return false;
+        }
+
+        // Проверяем meta_query на ключ исключения перевода
+        $meta_query = $query->get('meta_query');
+        $has_pllat_meta = false;
+        if (is_array($meta_query)) {
+            foreach ($meta_query as $maybe_group) {
+                if (is_array($maybe_group)) {
+                    foreach ($maybe_group as $cond) {
+                        if (is_array($cond) && isset($cond['key']) && $cond['key'] === '_pllat_exclude_from_translation') {
+                            $has_pllat_meta = true;
+                            break 2;
+                        }
+                    }
+                }
             }
         }
-        
-        return $where;
-    }
-    
-    /**
-     * Фильтр для сортировки постов по дате
-     */
-    public function filter_posts_order($orderby, $query) {
-        global $wpdb;
-        
-        // Получаем настройки
-        $options = get_option($this->option_name);
-        
-        // Проверяем, включена ли фильтрация
-        if (!isset($options['enabled']) || !$options['enabled']) {
-            return $orderby;
+        if (!$has_pllat_meta) {
+            return false;
         }
-        
-        // Проверяем, что это запрос содержит условия нашего фильтра
-        // (простая проверка - если в запросе есть наш фильтр дат)
-        $where_clause = $query->get('suppress_filters') ? '' : apply_filters('posts_where', '', $query);
-        if (strpos($where_clause, 'PLLAT DATE FILTER') === false && 
-            (strpos($where_clause, '_pllat_exclude_from_translation') === false && 
-             strpos($where_clause, '_pllat_translation_queue') === false)) {
-            return $orderby;
+
+        // Проверяем tax_query на таксономию языка
+        $tax_query = $query->get('tax_query');
+        $has_language_tax = false;
+        if (is_array($tax_query)) {
+            foreach ($tax_query as $cond) {
+                if (is_array($cond) && isset($cond['taxonomy']) && $cond['taxonomy'] === 'language') {
+                    $has_language_tax = true;
+                    break;
+                }
+            }
         }
-        
-        $date_order = isset($options['date_order']) ? $options['date_order'] : 'ASC';
-        
-        // Применяем сортировку по дате
-        if (empty($orderby) || strpos($orderby, 'post_date') === false) {
-            $orderby = "{$wpdb->posts}.post_date " . $date_order;
-        } else {
-            // Если уже есть сортировка по post_date, заменяем направление
-            $orderby = preg_replace('/post_date\s+(ASC|DESC)/i', 'post_date ' . $date_order, $orderby);
-        }
-        
-        error_log('PLLAT DATE FILTER: Applied date order: ' . $date_order);
-        
-        return $orderby;
+
+        return $has_language_tax;
     }
     
     /**
