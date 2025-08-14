@@ -247,3 +247,27 @@ msgstr "Settings are located in the \"Settings\" section instead of Polylang men
 #: pllat-date-filter.php
 msgid "Please select at least one post status."
 msgstr "Please select at least one post status."
+
+#: pllat-date-filter.php
+msgid "Untranslated Posts Only"
+msgstr "Untranslated Posts Only"
+
+#: pllat-date-filter.php
+msgid "Only untranslated posts"
+msgstr "Only untranslated posts"
+
+#: pllat-date-filter.php
+msgid "If checked, only posts that have not been translated will be processed."
+msgstr "If checked, only posts that have not been translated will be processed."
+
+#: pllat-date-filter.php
+msgid "Untranslated only:"
+msgstr "Untranslated only:"
+
+#: pllat-date-filter.php
+msgid "Yes"
+msgstr "Yes"
+
+#: pllat-date-filter.php
+msgid "No"
+msgstr "No"

@@ -247,3 +247,27 @@ msgstr "Настройки находятся в разделе «Настрой
 #: pllat-date-filter.php
 msgid "Please select at least one post status."
 msgstr "Пожалуйста, выберите хотя бы один статус записи."
+
+#: pllat-date-filter.php
+msgid "Untranslated Posts Only"
+msgstr "Только непереведённые записи"
+
+#: pllat-date-filter.php
+msgid "Only untranslated posts"
+msgstr "Только непереведённые записи"
+
+#: pllat-date-filter.php
+msgid "If checked, only posts that have not been translated will be processed."
+msgstr "Если отмечено, будут обрабатываться только записи, которые ещё не были переведены."
+
+#: pllat-date-filter.php
+msgid "Untranslated only:"
+msgstr "Только непереведённые:"
+
+#: pllat-date-filter.php
+msgid "Yes"
+msgstr "Да"
+
+#: pllat-date-filter.php
+msgid "No"
+msgstr "Нет"

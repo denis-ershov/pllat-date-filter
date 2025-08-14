@@ -243,3 +243,27 @@ msgstr ""
 #: pllat-date-filter.php
 msgid "Please select at least one post status."
 msgstr ""
+
+#: pllat-date-filter.php
+msgid "Untranslated Posts Only"
+msgstr ""
+
+#: pllat-date-filter.php
+msgid "Only untranslated posts"
+msgstr ""
+
+#: pllat-date-filter.php
+msgid "If checked, only posts that have not been translated will be processed."
+msgstr ""
+
+#: pllat-date-filter.php
+msgid "Untranslated only:"
+msgstr ""
+
+#: pllat-date-filter.php
+msgid "Yes"
+msgstr ""
+
+#: pllat-date-filter.php
+msgid "No"
+msgstr ""

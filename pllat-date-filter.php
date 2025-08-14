@@ -3,7 +3,7 @@
  * Plugin Name: PLLAT Date Filter
  * Plugin URI: https://github.com/denis-ershov/pllat-date-filter
  * Description: Date filtering functionality for Polylang Automatic AI Translation. Filter posts by date range or from specific date when running bulk translations.
- * Version: 1.1.1
+ * Version: 1.2.0
  * Author: Denis Ershov
  * License: GPL3
  * Text Domain: pllat-date-filter
@@ -147,6 +147,14 @@ class PLLAT_Date_Filter {
             'pllat_date_filter',
             'pllat_date_filter_section'
         );
+        
+        add_settings_field(
+            'untranslated_only',
+            __('Untranslated Posts Only', 'pllat-date-filter'),
+            array($this, 'untranslated_only_render'),
+            'pllat_date_filter',
+            'pllat_date_filter_section'
+        );
     }
     
     /**
@@ -259,6 +267,19 @@ class PLLAT_Date_Filter {
     }
     
     /**
+     * Поле выбора только непереведенных записей
+     */
+    public function untranslated_only_render() {
+        $options = get_option($this->option_name);
+        $untranslated_only = isset($options['untranslated_only']) ? $options['untranslated_only'] : 0;
+        ?>
+        <input type='checkbox' name='<?php echo $this->option_name; ?>[untranslated_only]' value='1' <?php checked($untranslated_only, 1); ?>>
+        <label><?php _e('Only untranslated posts', 'pllat-date-filter'); ?></label>
+        <p class="description"><?php _e('If checked, only posts that have not been translated will be processed.', 'pllat-date-filter'); ?></p>
+        <?php
+    }
+    
+    /**
      * Страница настроек
      */
     public function options_page() {
@@ -352,6 +373,7 @@ class PLLAT_Date_Filter {
         $end_date = isset($options['end_date']) ? $options['end_date'] : '';
         $date_order = isset($options['date_order']) ? $options['date_order'] : 'ASC';
         $post_status = isset($options['post_status']) ? $options['post_status'] : array('publish');
+        $untranslated_only = isset($options['untranslated_only']) ? $options['untranslated_only'] : 0;
         
         // Обеспечиваем что post_status это массив
         if (!is_array($post_status)) {
@@ -390,6 +412,7 @@ class PLLAT_Date_Filter {
         }
         
         echo '<li><strong>' . __('Post statuses:', 'pllat-date-filter') . '</strong> ' . esc_html(implode(', ', $selected_labels)) . '</li>';
+        echo '<li><strong>' . __('Untranslated only:', 'pllat-date-filter') . '</strong> ' . ($untranslated_only ? __('Yes', 'pllat-date-filter') : __('No', 'pllat-date-filter')) . '</li>';
         
         echo '</ul>';
     }
@@ -466,6 +489,7 @@ class PLLAT_Date_Filter {
         $end_date    = $options['end_date'] ?? '';
         $date_order  = strtoupper($options['date_order'] ?? 'ASC');
         $post_status = $options['post_status'] ?? array('publish');
+        $untranslated_only = isset($options['untranslated_only']) ? $options['untranslated_only'] : 0;
 
         // Нужна хотя бы стартовая дата
         if (empty($start_date)) {
@@ -474,7 +498,7 @@ class PLLAT_Date_Filter {
 
         // Лог перед применением
         if (defined('WP_DEBUG') && WP_DEBUG) {
-            error_log('PLLAT DATE FILTER: detected translation query. type=' . $filter_type . ', start=' . $start_date . ', end=' . $end_date . ', order=' . $date_order . ', statuses=' . (is_array($post_status) ? implode(',', $post_status) : (string) $post_status));
+            error_log('PLLAT DATE FILTER: detected translation query. type=' . $filter_type . ', start=' . $start_date . ', end=' . $end_date . ', order=' . $date_order . ', statuses=' . (is_array($post_status) ? implode(',', $post_status) : (string) $post_status) . ', untranslated_only=' . $untranslated_only);
         }
 
         // Устанавливаем статус, если явно задан (не 'any')
@@ -496,8 +520,33 @@ class PLLAT_Date_Filter {
         }
         $query->set('date_query', array($date_query));
 
+        // Применяем фильтр только непереведенных записей, если включен
+        if ($untranslated_only) {
+            // Получаем текущий meta_query
+            $current_meta_query = $query->get('meta_query');
+            if (!is_array($current_meta_query)) {
+                $current_meta_query = array();
+            }
+            
+            // Добавляем условие для непереведенных записей
+            $current_meta_query[] = array(
+                'relation' => 'OR',
+                array(
+                    'key' => '_pllat_translation_queue',
+                    'compare' => 'NOT EXISTS'
+                ),
+                array(
+                    'key' => '_pllat_translation_queue',
+                    'value' => '',
+                    'compare' => '='
+                )
+            );
+            
+            $query->set('meta_query', $current_meta_query);
+        }
+
         if (defined('WP_DEBUG') && WP_DEBUG) {
-            error_log('PLLAT DATE FILTER: applied date_query=' . json_encode($query->get('date_query')) . ', post_status=' . json_encode($query->get('post_status')) . ', order=' . $query->get('order'));
+            error_log('PLLAT DATE FILTER: applied date_query=' . json_encode($query->get('date_query')) . ', post_status=' . json_encode($query->get('post_status')) . ', order=' . $query->get('order') . ', untranslated_only=' . $untranslated_only);
         }
     }
 
@@ -592,7 +641,8 @@ function pllat_date_filter_activate() {
         'start_date' => '',
         'end_date' => '',
         'date_order' => 'ASC',
-        'post_status' => array('publish')
+        'post_status' => array('publish'),
+        'untranslated_only' => 0
     );
     
     add_option('pllat_date_filter_settings', $default_options);
