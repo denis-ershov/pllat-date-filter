@@ -91,7 +91,7 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## 📝 Changelog
 
-## [1.2.0] - 2025-08-11
+## [1.2.0] - 2025-08-14
 
 ### ✨ New Features
 - **Untranslated Posts Filter**: Added option to filter only posts that have not been translated yet
@@ -107,30 +107,6 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 - **New Translatable Strings**: Added all new strings to POT file
 - **Russian Translations**: Complete Russian localization for new features
 - **English Translations**: Updated English language file
-
-## [1.1.1] - 2025-08-11
-
-### 🔄 Major Changes
-- **Filtering Mechanism**: Switched from SQL-level hooks to `pre_get_posts` and `parse_query` for reliable application
-- **Query Detection**: Improved detection of Polylang AI translation queries by inspecting WP_Query object properties
-
-### 🐛 Bug Fixes
-- **Filter Compatibility**: Fixed filtering not working due to `suppress_filters` in main plugin's WP_Query
-- **Query Detection**: More robust detection using `no_found_rows`, `meta_query`, and `tax_query` signatures
-- **SQL Hooks**: Removed unreliable `posts_where` and `posts_orderby` SQL string manipulation
-
-### 🛠️ Developer Experience
-- **Debug Logging**: Added comprehensive logging to `debug.log` for easier verification
-- **Error Handling**: Better error handling and validation
-
-## [1.1.0] - 2025-08-10
-
-### 🎉 Initial Release
-- **Date Filtering**: Filter posts by start date or date range
-- **Status Filtering**: Filter by post status (publish, draft, pending, etc.)
-- **Order Control**: Control date ordering (ascending/descending)
-- **Admin Interface**: User-friendly settings page in WordPress admin
-- **Polylang Integration**: Seamless integration with Polylang menu structure
 
 ## 📄 License
 
