@@ -5,6 +5,7 @@ A WordPress plugin that adds intelligent date filtering functionality for **Poly
 ## ✨ Features
 
 - 🗓️ **Flexible Date Filtering**: Choose from specific date or date range
+- 🔄 **Automatic Date Updates**: Automatically update start date on schedule to prevent exceeding Bulk Size limit
 - 🎯 **Smart Integration**: Automatically integrates with Polylang admin menu
 - ⚡ **Real-time UI**: Dynamic form fields based on filter type selection
 - 🔧 **Easy Configuration**: Simple settings page with intuitive interface
@@ -37,6 +38,28 @@ git clone https://github.com/denis-ershov/pllat-date-filter.git
 - Translates posts published **between** two specific dates (inclusive)
 - Ideal for processing content from specific time periods
 
+### 🔄 Automatic Start Date Updates
+
+Prevent exceeding Bulk Size limits by automatically updating the start date on a schedule. This ensures new posts are always included in the translation queue.
+
+#### Update Intervals
+- **Hourly**: Update every hour
+- **Twice Daily**: Update twice per day (every 12 hours)
+- **Daily**: Update once per day (recommended)
+- **Weekly**: Update once per week
+
+#### Update Methods
+
+**Set to today minus N days**
+- Always sets the start date to today minus the specified number of days
+- Perfect for maintaining a rolling window of recent content
+- Example: With 7 days, always processes posts from the last week
+
+**Shift current date forward by N days**
+- Shifts the existing start date forward by the specified number of days
+- Useful for gradual progression through historical content
+- Automatically prevents setting dates in the future
+
 ### Settings Location
 - **With Polylang**: `Languages → Date Filter`
 - **Without Polylang**: `Settings → PLLAT Date Filter`
@@ -47,6 +70,8 @@ git clone https://github.com/denis-ershov/pllat-date-filter.git
 - **Archive Processing**: Translate content from specific years
 - **Incremental Translation**: Process posts in date-based batches
 - **Content Migration**: Translate content from specific publication periods
+- **Bulk Size Management**: Automatically adjust date range to stay within Bulk Size limits (up to 3000 items per content type)
+- **Continuous Translation**: Keep translation queue updated with new content automatically
 
 ## 🔧 Requirements
 
@@ -76,7 +101,22 @@ define('WP_DEBUG_LOG', true);
 Look for entries like:
 ```
 PLLAT DATE FILTER: Applied "from date" filter >= 2025-07-01 00:00:00
+PLLAT DATE FILTER: Auto-updated start date from 2025-07-01 to 2025-07-08 (method: shift_days, days: 7)
 ```
+
+## 🌐 Translations
+
+If translations are not showing up in the admin panel:
+
+1. **Compile MO files**: PO files need to be compiled to MO files for WordPress to use them
+   - Use `msgfmt` command: `msgfmt -o languages/pllat-date-filter-ru_RU.mo languages/pllat-date-filter-ru_RU.po`
+   - Or use WP-CLI: `wp i18n make-mo languages/`
+   - Or use online converter: https://po2mo.net/
+   - See [COMPILE_TRANSLATIONS.md](COMPILE_TRANSLATIONS.md) for detailed instructions
+
+2. **Clear cache**: Clear WordPress cache and reload the admin page
+
+3. **Check language**: Ensure WordPress language is set correctly in Settings → General
 
 ## 🤝 Contributing
 
@@ -90,6 +130,28 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 5. Open a Pull Request
 
 ## 📝 Changelog
+
+## [1.3.0] - 2026-02-02
+
+### ✨ New Features
+- **Automatic Start Date Updates**: Automatically update the start date on a schedule using WordPress cron
+- **Flexible Update Intervals**: Choose from hourly, twice daily, daily, or weekly updates
+- **Two Update Methods**: 
+  - Set to today minus N days (rolling window)
+  - Shift current date forward by N days (gradual progression)
+- **Bulk Size Management**: Prevent exceeding Bulk Size limits by automatically adjusting date range
+- **Next Update Display**: Shows when the next automatic update is scheduled
+
+### 🔧 Technical Improvements
+- **WordPress Cron Integration**: Proper scheduling and cleanup of cron tasks
+- **Smart Date Calculation**: Prevents setting dates in the future
+- **Enhanced Settings UI**: Dynamic field visibility based on auto-update status
+- **Improved Logging**: Detailed logs for automatic date updates in debug mode
+
+### 🌐 Internationalization
+- **New Translatable Strings**: Added all new strings to POT file
+- **Russian Translations**: Complete Russian localization for new features
+- **English Translations**: Updated English language file
 
 ## [1.2.0] - 2025-08-14
 

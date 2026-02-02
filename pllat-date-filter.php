@@ -3,7 +3,7 @@
  * Plugin Name: PLLAT Date Filter
  * Plugin URI: https://github.com/denis-ershov/pllat-date-filter
  * Description: Date filtering functionality for Polylang Automatic AI Translation. Filter posts by date range or from specific date when running bulk translations.
- * Version: 1.2.0
+ * Version: 1.3.0
  * Author: Denis Ershov
  * License: GPL3
  * Text Domain: pllat-date-filter
@@ -38,16 +38,36 @@ class PLLAT_Date_Filter {
         
         // Добавляем уведомление если Polylang не активен
         add_action('admin_notices', array($this, 'polylang_notice'));
+        
+        // Регистрируем cron hook для автоматической смены даты
+        add_action('pllat_date_filter_auto_update', array($this, 'auto_update_start_date'));
+        
+        // Проверяем и регистрируем cron при загрузке
+        add_action('init', array($this, 'maybe_schedule_auto_update'));
+        
+        // Обновляем cron задачу после сохранения настроек
+        add_action('updated_option', array($this, 'maybe_update_cron_on_option_save'), 10, 3);
     }
     
     /**
      * Загружаем файлы переводов
      */
     public function load_textdomain() {
+        $domain = 'pllat-date-filter';
+        $locale = apply_filters('plugin_locale', determine_locale(), $domain);
+        
+        // Загружаем переводы из папки languages плагина
+        $mofile = $domain . '-' . $locale . '.mo';
+        $path = dirname(plugin_basename(__FILE__)) . '/languages/';
+        
+        // Пробуем загрузить из папки плагина
+        load_textdomain($domain, WP_PLUGIN_DIR . '/' . $path . $mofile);
+        
+        // Также пробуем стандартный метод для совместимости
         load_plugin_textdomain(
-            'pllat-date-filter',
+            $domain,
             false,
-            dirname(plugin_basename(__FILE__)) . '/languages/'
+            $path
         );
     }
     
@@ -91,7 +111,7 @@ class PLLAT_Date_Filter {
      * Инициализация настроек
      */
     public function settings_init() {
-        register_setting('pllat_date_filter', $this->option_name);
+        register_setting('pllat_date_filter', $this->option_name, array($this, 'sanitize_settings'));
         
         add_settings_section(
             'pllat_date_filter_section',
@@ -155,6 +175,78 @@ class PLLAT_Date_Filter {
             'pllat_date_filter',
             'pllat_date_filter_section'
         );
+        
+        add_settings_field(
+            'debug_mode',
+            __('Debug Mode', 'pllat-date-filter'),
+            array($this, 'debug_mode_render'),
+            'pllat_date_filter',
+            'pllat_date_filter_section'
+        );
+        
+        add_settings_field(
+            'auto_update_start_date',
+            __('Auto Update Start Date', 'pllat-date-filter'),
+            array($this, 'auto_update_start_date_render'),
+            'pllat_date_filter',
+            'pllat_date_filter_section'
+        );
+        
+        add_settings_field(
+            'auto_update_interval',
+            __('Update Interval', 'pllat-date-filter'),
+            array($this, 'auto_update_interval_render'),
+            'pllat_date_filter',
+            'pllat_date_filter_section'
+        );
+        
+        add_settings_field(
+            'auto_update_method',
+            __('Update Method', 'pllat-date-filter'),
+            array($this, 'auto_update_method_render'),
+            'pllat_date_filter',
+            'pllat_date_filter_section'
+        );
+        
+        add_settings_field(
+            'auto_update_days',
+            __('Days to Shift', 'pllat-date-filter'),
+            array($this, 'auto_update_days_render'),
+            'pllat_date_filter',
+            'pllat_date_filter_section'
+        );
+    }
+    
+    /**
+     * Санитизация настроек перед сохранением
+     */
+    public function sanitize_settings($input) {
+        // Санитизируем все поля
+        $sanitized = array();
+        
+        $sanitized['enabled'] = isset($input['enabled']) ? 1 : 0;
+        $sanitized['filter_type'] = isset($input['filter_type']) && in_array($input['filter_type'], array('from_date', 'date_range')) ? $input['filter_type'] : 'from_date';
+        $sanitized['start_date'] = isset($input['start_date']) ? sanitize_text_field($input['start_date']) : '';
+        $sanitized['end_date'] = isset($input['end_date']) ? sanitize_text_field($input['end_date']) : '';
+        $sanitized['date_order'] = isset($input['date_order']) && in_array(strtoupper($input['date_order']), array('ASC', 'DESC')) ? strtoupper($input['date_order']) : 'ASC';
+        $sanitized['post_status'] = isset($input['post_status']) && is_array($input['post_status']) ? array_map('sanitize_text_field', $input['post_status']) : array('publish');
+        $sanitized['untranslated_only'] = isset($input['untranslated_only']) ? 1 : 0;
+        $sanitized['debug_mode'] = isset($input['debug_mode']) ? 1 : 0;
+        $sanitized['auto_update_start_date'] = isset($input['auto_update_start_date']) ? 1 : 0;
+        $sanitized['auto_update_interval'] = isset($input['auto_update_interval']) && in_array($input['auto_update_interval'], array('hourly', 'twicedaily', 'daily', 'weekly')) ? $input['auto_update_interval'] : 'daily';
+        $sanitized['auto_update_method'] = isset($input['auto_update_method']) && in_array($input['auto_update_method'], array('days_back', 'shift_days')) ? $input['auto_update_method'] : 'days_back';
+        $sanitized['auto_update_days'] = isset($input['auto_update_days']) ? max(1, min(365, intval($input['auto_update_days']))) : 7;
+        
+        return $sanitized;
+    }
+    
+    /**
+     * Обновляет cron задачу после сохранения настроек
+     */
+    public function maybe_update_cron_on_option_save($option_name, $old_value, $value) {
+        if ($option_name === $this->option_name) {
+            $this->maybe_schedule_auto_update();
+        }
     }
     
     /**
@@ -280,6 +372,76 @@ class PLLAT_Date_Filter {
     }
     
     /**
+     * Поле отладки
+     */
+    public function debug_mode_render() {
+        $options = get_option($this->option_name);
+        $debug_mode = isset($options['debug_mode']) ? $options['debug_mode'] : 0;
+        ?>
+        <input type='checkbox' name='<?php echo $this->option_name; ?>[debug_mode]' value='1' <?php checked($debug_mode, 1); ?>>
+        <label><?php _e('Enable debug mode', 'pllat-date-filter'); ?></label>
+        <p class="description"><?php _e('When enabled, detailed logs will be written to the WordPress debug log file.', 'pllat-date-filter'); ?></p>
+        <?php
+    }
+    
+    /**
+     * Поле автоматической смены начальной даты
+     */
+    public function auto_update_start_date_render() {
+        $options = get_option($this->option_name);
+        $auto_update = isset($options['auto_update_start_date']) ? $options['auto_update_start_date'] : 0;
+        ?>
+        <input type='checkbox' name='<?php echo $this->option_name; ?>[auto_update_start_date]' value='1' id='auto_update_start_date' <?php checked($auto_update, 1); ?>>
+        <label><?php _e('Enable automatic start date update', 'pllat-date-filter'); ?></label>
+        <p class="description"><?php _e('Automatically update the start date on a schedule to prevent exceeding Bulk Size limit. This ensures new posts are always included in translation queue.', 'pllat-date-filter'); ?></p>
+        <?php
+    }
+    
+    /**
+     * Поле интервала обновления
+     */
+    public function auto_update_interval_render() {
+        $options = get_option($this->option_name);
+        $interval = isset($options['auto_update_interval']) ? $options['auto_update_interval'] : 'daily';
+        ?>
+        <select name='<?php echo $this->option_name; ?>[auto_update_interval]' id='auto_update_interval'>
+            <option value='hourly' <?php selected($interval, 'hourly'); ?>><?php _e('Hourly', 'pllat-date-filter'); ?></option>
+            <option value='twicedaily' <?php selected($interval, 'twicedaily'); ?>><?php _e('Twice Daily', 'pllat-date-filter'); ?></option>
+            <option value='daily' <?php selected($interval, 'daily'); ?>><?php _e('Daily', 'pllat-date-filter'); ?></option>
+            <option value='weekly' <?php selected($interval, 'weekly'); ?>><?php _e('Weekly', 'pllat-date-filter'); ?></option>
+        </select>
+        <p class="description"><?php _e('How often to update the start date automatically', 'pllat-date-filter'); ?></p>
+        <?php
+    }
+    
+    /**
+     * Поле метода обновления
+     */
+    public function auto_update_method_render() {
+        $options = get_option($this->option_name);
+        $method = isset($options['auto_update_method']) ? $options['auto_update_method'] : 'days_back';
+        ?>
+        <select name='<?php echo $this->option_name; ?>[auto_update_method]' id='auto_update_method'>
+            <option value='days_back' <?php selected($method, 'days_back'); ?>><?php _e('Set to today minus N days', 'pllat-date-filter'); ?></option>
+            <option value='shift_days' <?php selected($method, 'shift_days'); ?>><?php _e('Shift current date forward by N days', 'pllat-date-filter'); ?></option>
+        </select>
+        <p class="description"><?php _e('Method for calculating the new start date', 'pllat-date-filter'); ?></p>
+        <?php
+    }
+    
+    /**
+     * Поле количества дней для сдвига
+     */
+    public function auto_update_days_render() {
+        $options = get_option($this->option_name);
+        $days = isset($options['auto_update_days']) ? intval($options['auto_update_days']) : 7;
+        ?>
+        <input type='number' name='<?php echo $this->option_name; ?>[auto_update_days]' value='<?php echo esc_attr($days); ?>' id='auto_update_days' min='1' max='365' step='1'>
+        <p class="description"><?php _e('Number of days to use for date calculation (1-365)', 'pllat-date-filter'); ?></p>
+        <?php
+    }
+    
+    /**
      * Страница настроек
      */
     public function options_page() {
@@ -374,6 +536,7 @@ class PLLAT_Date_Filter {
         $date_order = isset($options['date_order']) ? $options['date_order'] : 'ASC';
         $post_status = isset($options['post_status']) ? $options['post_status'] : array('publish');
         $untranslated_only = isset($options['untranslated_only']) ? $options['untranslated_only'] : 0;
+        $debug_mode = isset($options['debug_mode']) ? $options['debug_mode'] : 0;
         
         // Обеспечиваем что post_status это массив
         if (!is_array($post_status)) {
@@ -413,6 +576,41 @@ class PLLAT_Date_Filter {
         
         echo '<li><strong>' . __('Post statuses:', 'pllat-date-filter') . '</strong> ' . esc_html(implode(', ', $selected_labels)) . '</li>';
         echo '<li><strong>' . __('Untranslated only:', 'pllat-date-filter') . '</strong> ' . ($untranslated_only ? __('Yes', 'pllat-date-filter') : __('No', 'pllat-date-filter')) . '</li>';
+        echo '<li><strong>' . __('Debug mode:', 'pllat-date-filter') . '</strong> ' . ($debug_mode ? __('Enabled', 'pllat-date-filter') : __('Disabled', 'pllat-date-filter')) . '</li>';
+        
+        // Отображаем настройки автоматического обновления
+        $auto_update = isset($options['auto_update_start_date']) ? $options['auto_update_start_date'] : 0;
+        if ($auto_update) {
+            $interval = isset($options['auto_update_interval']) ? $options['auto_update_interval'] : 'daily';
+            $method = isset($options['auto_update_method']) ? $options['auto_update_method'] : 'days_back';
+            $days = isset($options['auto_update_days']) ? intval($options['auto_update_days']) : 7;
+            
+            $interval_labels = array(
+                'hourly' => __('Hourly', 'pllat-date-filter'),
+                'twicedaily' => __('Twice Daily', 'pllat-date-filter'),
+                'daily' => __('Daily', 'pllat-date-filter'),
+                'weekly' => __('Weekly', 'pllat-date-filter')
+            );
+            
+            $method_labels = array(
+                'days_back' => __('Set to today minus N days', 'pllat-date-filter'),
+                'shift_days' => __('Shift current date forward by N days', 'pllat-date-filter')
+            );
+            
+            echo '<li><strong>' . __('Auto update:', 'pllat-date-filter') . '</strong> ' . __('Enabled', 'pllat-date-filter') . '</li>';
+            echo '<li><strong>' . __('Update interval:', 'pllat-date-filter') . '</strong> ' . (isset($interval_labels[$interval]) ? $interval_labels[$interval] : $interval) . '</li>';
+            echo '<li><strong>' . __('Update method:', 'pllat-date-filter') . '</strong> ' . (isset($method_labels[$method]) ? $method_labels[$method] : $method) . '</li>';
+            echo '<li><strong>' . __('Days:', 'pllat-date-filter') . '</strong> ' . $days . '</li>';
+            
+            // Показываем следующее запланированное обновление
+            $next_scheduled = wp_next_scheduled('pllat_date_filter_auto_update');
+            if ($next_scheduled) {
+                $next_date = date_i18n(get_option('date_format') . ' ' . get_option('time_format'), $next_scheduled);
+                echo '<li><strong>' . __('Next update:', 'pllat-date-filter') . '</strong> ' . $next_date . '</li>';
+            }
+        } else {
+            echo '<li><strong>' . __('Auto update:', 'pllat-date-filter') . '</strong> ' . __('Disabled', 'pllat-date-filter') . '</li>';
+        }
         
         echo '</ul>';
     }
@@ -442,8 +640,28 @@ class PLLAT_Date_Filter {
                     }
                 }
                 
+                function toggleAutoUpdateFields() {
+                    var autoUpdateEnabled = $('#auto_update_start_date').is(':checked');
+                    var intervalRow = $('#auto_update_interval').closest('tr');
+                    var methodRow = $('#auto_update_method').closest('tr');
+                    var daysRow = $('#auto_update_days').closest('tr');
+                    
+                    if (autoUpdateEnabled) {
+                        intervalRow.show();
+                        methodRow.show();
+                        daysRow.show();
+                    } else {
+                        intervalRow.hide();
+                        methodRow.hide();
+                        daysRow.hide();
+                    }
+                }
+                
                 $('#filter_type').change(toggleEndDate);
+                $('#auto_update_start_date').change(toggleAutoUpdateFields);
+                
                 toggleEndDate(); // Запускаем при загрузке
+                toggleAutoUpdateFields(); // Запускаем при загрузке
                 
                 // Проверяем что выбран хотя бы один статус поста
                 function validatePostStatus() {
@@ -490,6 +708,7 @@ class PLLAT_Date_Filter {
         $date_order  = strtoupper($options['date_order'] ?? 'ASC');
         $post_status = $options['post_status'] ?? array('publish');
         $untranslated_only = isset($options['untranslated_only']) ? $options['untranslated_only'] : 0;
+        $debug_mode = isset($options['debug_mode']) ? $options['debug_mode'] : 0;
 
         // Нужна хотя бы стартовая дата
         if (empty($start_date)) {
@@ -497,56 +716,76 @@ class PLLAT_Date_Filter {
         }
 
         // Лог перед применением
-        if (defined('WP_DEBUG') && WP_DEBUG) {
+        if ($debug_mode && defined('WP_DEBUG') && WP_DEBUG) {
             error_log('PLLAT DATE FILTER: detected translation query. type=' . $filter_type . ', start=' . $start_date . ', end=' . $end_date . ', order=' . $date_order . ', statuses=' . (is_array($post_status) ? implode(',', $post_status) : (string) $post_status) . ', untranslated_only=' . $untranslated_only);
         }
 
-        // Устанавливаем статус, если явно задан (не 'any')
-        if (!empty($post_status) && !(is_array($post_status) && in_array('any', $post_status, true)) && $post_status !== 'any') {
-            $query->set('post_status', $post_status);
-        }
+        try {
+            // Устанавливаем статус, если явно задан (не 'any')
+            if (!empty($post_status) && !(is_array($post_status) && in_array('any', $post_status, true)) && $post_status !== 'any') {
+                $query->set('post_status', $post_status);
+            }
 
-        // Устанавливаем сортировку
-        $query->set('orderby', 'date');
-        $query->set('order', $date_order === 'DESC' ? 'DESC' : 'ASC');
+            // Устанавливаем сортировку
+            $query->set('orderby', 'date');
+            $query->set('order', $date_order === 'DESC' ? 'DESC' : 'ASC');
 
-        // Устанавливаем date_query
-        $date_query = array('inclusive' => true);
-        if ($filter_type === 'date_range' && !empty($end_date)) {
-            $date_query['after']  = $start_date;
-            $date_query['before'] = $end_date;
-        } else {
-            $date_query['after'] = $start_date;
-        }
-        $query->set('date_query', array($date_query));
+            // Устанавливаем date_query
+            $date_query = array('inclusive' => true);
+            if ($filter_type === 'date_range' && !empty($end_date)) {
+                $date_query['after']  = $start_date;
+                $date_query['before'] = $end_date;
+            } else {
+                $date_query['after'] = $start_date;
+            }
+            $query->set('date_query', array($date_query));
 
-        // Применяем фильтр только непереведенных записей, если включен
-        if ($untranslated_only) {
-            // Получаем текущий meta_query
-            $current_meta_query = $query->get('meta_query');
-            if (!is_array($current_meta_query)) {
-                $current_meta_query = array();
+            // Применяем фильтр только непереведенных записей, если включен
+            if ($untranslated_only) {
+                // Создаем простой meta_query для непереведенных записей
+                $untranslated_meta_query = array(
+                    'relation' => 'OR',
+                    array(
+                        'key' => '_pllat_translation_queue',
+                        'compare' => 'NOT EXISTS'
+                    ),
+                    array(
+                        'key' => '_pllat_translation_queue',
+                        'value' => '',
+                        'compare' => '='
+                    )
+                );
+                
+                // Получаем текущий meta_query и объединяем с новым
+                $current_meta_query = $query->get('meta_query');
+                if (is_array($current_meta_query) && !empty($current_meta_query)) {
+                    // Если уже есть meta_query, объединяем их
+                    $query->set('meta_query', array(
+                        'relation' => 'AND',
+                        $current_meta_query,
+                        $untranslated_meta_query
+                    ));
+                } else {
+                    // Если meta_query пустой, устанавливаем только наш
+                    $query->set('meta_query', $untranslated_meta_query);
+                }
+            }
+
+            // Добавляем безопасные ограничения для предотвращения зависания
+            $query->set('posts_per_page', 100); // Ограничиваем количество постов за раз
+            $query->set('no_found_rows', true); // Отключаем подсчет общего количества
+
+            if ($debug_mode && defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('PLLAT DATE FILTER: applied filters successfully. date_query=' . json_encode($query->get('date_query')) . ', post_status=' . json_encode($query->get('post_status')) . ', order=' . $query->get('order') . ', untranslated_only=' . $untranslated_only . ', posts_per_page=' . $query->get('posts_per_page'));
             }
             
-            // Добавляем условие для непереведенных записей
-            $current_meta_query[] = array(
-                'relation' => 'OR',
-                array(
-                    'key' => '_pllat_translation_queue',
-                    'compare' => 'NOT EXISTS'
-                ),
-                array(
-                    'key' => '_pllat_translation_queue',
-                    'value' => '',
-                    'compare' => '='
-                )
-            );
-            
-            $query->set('meta_query', $current_meta_query);
-        }
-
-        if (defined('WP_DEBUG') && WP_DEBUG) {
-            error_log('PLLAT DATE FILTER: applied date_query=' . json_encode($query->get('date_query')) . ', post_status=' . json_encode($query->get('post_status')) . ', order=' . $query->get('order') . ', untranslated_only=' . $untranslated_only);
+        } catch (Exception $e) {
+            // Логируем ошибки для отладки
+            if ($debug_mode && defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('PLLAT DATE FILTER ERROR: ' . $e->getMessage());
+            }
+            // В случае ошибки не применяем фильтры
+            return;
         }
     }
 
@@ -554,14 +793,12 @@ class PLLAT_Date_Filter {
      * Определяем, что это запрос сбора постов для перевода в PLLAT
      */
     private function is_pllat_translation_query(\WP_Query $query): bool {
-        // Эти флаги характерны для Post_Collector::get_query_args
-        if ($query->get('no_found_rows') !== true) {
-            return false;
-        }
-
+        // Более мягкая проверка - ищем основные признаки PLLAT запроса
+        
         // Проверяем meta_query на ключ исключения перевода
         $meta_query = $query->get('meta_query');
         $has_pllat_meta = false;
+        
         if (is_array($meta_query)) {
             foreach ($meta_query as $maybe_group) {
                 if (is_array($maybe_group)) {
@@ -574,23 +811,26 @@ class PLLAT_Date_Filter {
                 }
             }
         }
-        if (!$has_pllat_meta) {
-            return false;
+        
+        // Если есть PLLAT meta_query, считаем это запросом перевода
+        if ($has_pllat_meta) {
+            return true;
         }
-
-        // Проверяем tax_query на таксономию языка
+        
+        // Дополнительная проверка на tax_query с языком (если есть)
         $tax_query = $query->get('tax_query');
-        $has_language_tax = false;
         if (is_array($tax_query)) {
             foreach ($tax_query as $cond) {
                 if (is_array($cond) && isset($cond['taxonomy']) && $cond['taxonomy'] === 'language') {
-                    $has_language_tax = true;
-                    break;
+                    // Если есть таксономия языка И no_found_rows, то это скорее всего PLLAT
+                    if ($query->get('no_found_rows') === true) {
+                        return true;
+                    }
                 }
             }
         }
-
-        return $has_language_tax;
+        
+        return false;
     }
     
     /**
@@ -625,6 +865,97 @@ class PLLAT_Date_Filter {
             }
         }
     }
+    
+    /**
+     * Проверяет настройки и регистрирует/удаляет cron задачу для автоматической смены даты
+     */
+    public function maybe_schedule_auto_update() {
+        $options = get_option($this->option_name);
+        
+        if (empty($options) || empty($options['auto_update_start_date'])) {
+            // Если автоматическое обновление отключено, удаляем cron задачу
+            $timestamp = wp_next_scheduled('pllat_date_filter_auto_update');
+            if ($timestamp) {
+                wp_unschedule_event($timestamp, 'pllat_date_filter_auto_update');
+            }
+            return;
+        }
+        
+        // Получаем интервал обновления
+        $interval = isset($options['auto_update_interval']) ? $options['auto_update_interval'] : 'daily';
+        
+        // Проверяем, зарегистрирована ли уже cron задача
+        if (!wp_next_scheduled('pllat_date_filter_auto_update')) {
+            // Регистрируем cron задачу
+            wp_schedule_event(time(), $interval, 'pllat_date_filter_auto_update');
+        } else {
+            // Проверяем, изменился ли интервал
+            $scheduled = wp_get_scheduled_event('pllat_date_filter_auto_update');
+            if ($scheduled && $scheduled->schedule !== $interval) {
+                // Удаляем старую задачу и создаем новую с новым интервалом
+                wp_unschedule_event($scheduled->timestamp, 'pllat_date_filter_auto_update');
+                wp_schedule_event(time(), $interval, 'pllat_date_filter_auto_update');
+            }
+        }
+    }
+    
+    /**
+     * Автоматически обновляет начальную дату согласно настройкам
+     */
+    public function auto_update_start_date() {
+        $options = get_option($this->option_name);
+        
+        // Проверяем, включено ли автоматическое обновление
+        if (empty($options) || empty($options['auto_update_start_date'])) {
+            return;
+        }
+        
+        // Проверяем, что фильтр включен и есть начальная дата
+        if (empty($options['enabled']) || empty($options['start_date'])) {
+            return;
+        }
+        
+        // Получаем параметры обновления
+        $method = isset($options['auto_update_method']) ? $options['auto_update_method'] : 'days_back';
+        $days = isset($options['auto_update_days']) ? intval($options['auto_update_days']) : 7;
+        $debug_mode = isset($options['debug_mode']) ? $options['debug_mode'] : 0;
+        
+        // Сохраняем текущую дату для логирования
+        $old_start_date = $options['start_date'];
+        
+        // Вычисляем новую дату
+        $new_start_date = '';
+        
+        if ($method === 'days_back') {
+            // Устанавливаем дату на сегодня минус N дней
+            $new_start_date = date('Y-m-d', strtotime("-{$days} days"));
+        } else {
+            // Сдвигаем текущую дату вперед на N дней
+            $current_start_date = $options['start_date'];
+            $new_start_date = date('Y-m-d', strtotime($current_start_date . " +{$days} days"));
+            
+            // Не позволяем установить дату в будущем
+            $today = date('Y-m-d');
+            if ($new_start_date > $today) {
+                $new_start_date = $today;
+            }
+        }
+        
+        // Обновляем настройки
+        $options['start_date'] = $new_start_date;
+        update_option($this->option_name, $options);
+        
+        // Логируем обновление
+        if ($debug_mode && defined('WP_DEBUG') && WP_DEBUG) {
+            error_log(sprintf(
+                'PLLAT DATE FILTER: Auto-updated start date from %s to %s (method: %s, days: %d)',
+                $old_start_date,
+                $new_start_date,
+                $method,
+                $days
+            ));
+        }
+    }
 }
 
 // Инициализируем плагин
@@ -642,10 +973,24 @@ function pllat_date_filter_activate() {
         'end_date' => '',
         'date_order' => 'ASC',
         'post_status' => array('publish'),
-        'untranslated_only' => 0
+        'untranslated_only' => 0,
+        'debug_mode' => 0,
+        'auto_update_start_date' => 0,
+        'auto_update_interval' => 'daily',
+        'auto_update_method' => 'days_back',
+        'auto_update_days' => 7
     );
     
     add_option('pllat_date_filter_settings', $default_options);
+    
+    // Регистрируем cron задачу, если автоматическое обновление включено
+    $options = get_option('pllat_date_filter_settings');
+    if (!empty($options['auto_update_start_date'])) {
+        $interval = isset($options['auto_update_interval']) ? $options['auto_update_interval'] : 'daily';
+        if (!wp_next_scheduled('pllat_date_filter_auto_update')) {
+            wp_schedule_event(time(), $interval, 'pllat_date_filter_auto_update');
+        }
+    }
 }
 register_activation_hook(__FILE__, 'pllat_date_filter_activate');
 
@@ -653,6 +998,12 @@ register_activation_hook(__FILE__, 'pllat_date_filter_activate');
  * Функция деактивации плагина
  */
 function pllat_date_filter_deactivate() {
+    // Удаляем cron задачу при деактивации
+    $timestamp = wp_next_scheduled('pllat_date_filter_auto_update');
+    if ($timestamp) {
+        wp_unschedule_event($timestamp, 'pllat_date_filter_auto_update');
+    }
+    
     // При желании можно удалить настройки
     // delete_option('pllat_date_filter_settings');
 }

@@ -3,10 +3,10 @@
 # This file is distributed under the same license as the PLLAT Date Filter package.
 msgid ""
 msgstr ""
-"Project-Id-Version: PLLAT Date Filter 1.1.1\n"
+"Project-Id-Version: PLLAT Date Filter 1.3.0\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2025-08-11 00:00+0000\n"
-"PO-Revision-Date: 2025-08-11 00:00+0000\n"
+"PO-Revision-Date: 2026-02-02 00:00+0000\n"
 "Last-Translator: \n"
 "Language-Team: English\n"
 "Language: en_US\n"
@@ -271,3 +271,111 @@ msgstr "Yes"
 #: pllat-date-filter.php
 msgid "No"
 msgstr "No"
+
+#: pllat-date-filter.php
+msgid "Debug Mode"
+msgstr "Debug Mode"
+
+#: pllat-date-filter.php
+msgid "Enable debug mode"
+msgstr "Enable debug mode"
+
+#: pllat-date-filter.php
+msgid "When enabled, detailed logs will be written to the WordPress debug log file."
+msgstr "When enabled, detailed logs will be written to the WordPress debug log file."
+
+#: pllat-date-filter.php
+msgid "Debug mode:"
+msgstr "Debug mode:"
+
+#: pllat-date-filter.php
+msgid "Enabled"
+msgstr "Enabled"
+
+#: pllat-date-filter.php
+msgid "Disabled"
+msgstr "Disabled"
+
+#: pllat-date-filter.php
+msgid "Auto Update Start Date"
+msgstr "Auto Update Start Date"
+
+#: pllat-date-filter.php
+msgid "Enable automatic start date update"
+msgstr "Enable automatic start date update"
+
+#: pllat-date-filter.php
+msgid "Automatically update the start date on a schedule to prevent exceeding Bulk Size limit. This ensures new posts are always included in translation queue."
+msgstr "Automatically update the start date on a schedule to prevent exceeding Bulk Size limit. This ensures new posts are always included in translation queue."
+
+#: pllat-date-filter.php
+msgid "Update Interval"
+msgstr "Update Interval"
+
+#: pllat-date-filter.php
+msgid "Hourly"
+msgstr "Hourly"
+
+#: pllat-date-filter.php
+msgid "Twice Daily"
+msgstr "Twice Daily"
+
+#: pllat-date-filter.php
+msgid "Daily"
+msgstr "Daily"
+
+#: pllat-date-filter.php
+msgid "Weekly"
+msgstr "Weekly"
+
+#: pllat-date-filter.php
+msgid "How often to update the start date automatically"
+msgstr "How often to update the start date automatically"
+
+#: pllat-date-filter.php
+msgid "Update Method"
+msgstr "Update Method"
+
+#: pllat-date-filter.php
+msgid "Set to today minus N days"
+msgstr "Set to today minus N days"
+
+#: pllat-date-filter.php
+msgid "Shift current date forward by N days"
+msgstr "Shift current date forward by N days"
+
+#: pllat-date-filter.php
+msgid "Method for calculating the new start date"
+msgstr "Method for calculating the new start date"
+
+#: pllat-date-filter.php
+msgid "Days to Shift"
+msgstr "Days to Shift"
+
+#: pllat-date-filter.php
+msgid "Number of days to use for date calculation (1-365)"
+msgstr "Number of days to use for date calculation (1-365)"
+
+#: pllat-date-filter.php
+msgid "Auto update:"
+msgstr "Auto update:"
+
+#: pllat-date-filter.php
+msgid "Update interval:"
+msgstr "Update interval:"
+
+#: pllat-date-filter.php
+msgid "Update method:"
+msgstr "Update method:"
+
+#: pllat-date-filter.php
+msgid "Days:"
+msgstr "Days:"
+
+#: pllat-date-filter.php
+msgid "Next update:"
+msgstr "Next update:"
+
+#: pllat-date-filter.php
+msgid "Date order:"
+msgstr "Date order:"

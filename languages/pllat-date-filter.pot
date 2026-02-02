@@ -1,9 +1,9 @@
 msgid ""
 msgstr ""
-"Project-Id-Version: PLLAT Date Filter 1.1.1\n"
+"Project-Id-Version: PLLAT Date Filter 1.3.0\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2025-08-11 00:00+0000\n"
-"PO-Revision-Date: 2025-08-11 00:00+0000\n"
+"PO-Revision-Date: 2026-02-02 00:00+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -266,4 +266,112 @@ msgstr ""
 
 #: pllat-date-filter.php
 msgid "No"
+msgstr ""
+
+#: pllat-date-filter.php
+msgid "Debug Mode"
+msgstr ""
+
+#: pllat-date-filter.php
+msgid "Enable debug mode"
+msgstr ""
+
+#: pllat-date-filter.php
+msgid "When enabled, detailed logs will be written to the WordPress debug log file."
+msgstr ""
+
+#: pllat-date-filter.php
+msgid "Debug mode:"
+msgstr ""
+
+#: pllat-date-filter.php
+msgid "Enabled"
+msgstr ""
+
+#: pllat-date-filter.php
+msgid "Disabled"
+msgstr ""
+
+#: pllat-date-filter.php
+msgid "Auto Update Start Date"
+msgstr ""
+
+#: pllat-date-filter.php
+msgid "Enable automatic start date update"
+msgstr ""
+
+#: pllat-date-filter.php
+msgid "Automatically update the start date on a schedule to prevent exceeding Bulk Size limit. This ensures new posts are always included in translation queue."
+msgstr ""
+
+#: pllat-date-filter.php
+msgid "Update Interval"
+msgstr ""
+
+#: pllat-date-filter.php
+msgid "Hourly"
+msgstr ""
+
+#: pllat-date-filter.php
+msgid "Twice Daily"
+msgstr ""
+
+#: pllat-date-filter.php
+msgid "Daily"
+msgstr ""
+
+#: pllat-date-filter.php
+msgid "Weekly"
+msgstr ""
+
+#: pllat-date-filter.php
+msgid "How often to update the start date automatically"
+msgstr ""
+
+#: pllat-date-filter.php
+msgid "Update Method"
+msgstr ""
+
+#: pllat-date-filter.php
+msgid "Set to today minus N days"
+msgstr ""
+
+#: pllat-date-filter.php
+msgid "Shift current date forward by N days"
+msgstr ""
+
+#: pllat-date-filter.php
+msgid "Method for calculating the new start date"
+msgstr ""
+
+#: pllat-date-filter.php
+msgid "Days to Shift"
+msgstr ""
+
+#: pllat-date-filter.php
+msgid "Number of days to use for date calculation (1-365)"
+msgstr ""
+
+#: pllat-date-filter.php
+msgid "Auto update:"
+msgstr ""
+
+#: pllat-date-filter.php
+msgid "Update interval:"
+msgstr ""
+
+#: pllat-date-filter.php
+msgid "Update method:"
+msgstr ""
+
+#: pllat-date-filter.php
+msgid "Days:"
+msgstr ""
+
+#: pllat-date-filter.php
+msgid "Next update:"
+msgstr ""
+
+#: pllat-date-filter.php
+msgid "Date order:"
 msgstr ""

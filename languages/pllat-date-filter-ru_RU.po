@@ -3,10 +3,10 @@
 # This file is distributed under the same license as the PLLAT Date Filter package.
 msgid ""
 msgstr ""
-"Project-Id-Version: PLLAT Date Filter 1.1.1\n"
+"Project-Id-Version: PLLAT Date Filter 1.3.0\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2025-08-11 00:00+0000\n"
-"PO-Revision-Date: 2025-08-11 00:00+0000\n"
+"PO-Revision-Date: 2026-02-02 00:00+0000\n"
 "Last-Translator: \n"
 "Language-Team: Russian\n"
 "Language: ru_RU\n"
@@ -271,3 +271,111 @@ msgstr "Да"
 #: pllat-date-filter.php
 msgid "No"
 msgstr "Нет"
+
+#: pllat-date-filter.php
+msgid "Debug Mode"
+msgstr "Режим отладки"
+
+#: pllat-date-filter.php
+msgid "Enable debug mode"
+msgstr "Включить режим отладки"
+
+#: pllat-date-filter.php
+msgid "When enabled, detailed logs will be written to the WordPress debug log file."
+msgstr "При включении подробные логи будут записываться в файл отладки WordPress."
+
+#: pllat-date-filter.php
+msgid "Debug mode:"
+msgstr "Режим отладки:"
+
+#: pllat-date-filter.php
+msgid "Enabled"
+msgstr "Включен"
+
+#: pllat-date-filter.php
+msgid "Disabled"
+msgstr "Отключен"
+
+#: pllat-date-filter.php
+msgid "Auto Update Start Date"
+msgstr "Автоматическое обновление начальной даты"
+
+#: pllat-date-filter.php
+msgid "Enable automatic start date update"
+msgstr "Включить автоматическое обновление начальной даты"
+
+#: pllat-date-filter.php
+msgid "Automatically update the start date on a schedule to prevent exceeding Bulk Size limit. This ensures new posts are always included in translation queue."
+msgstr "Автоматически обновлять начальную дату по расписанию, чтобы предотвратить превышение лимита Bulk Size. Это гарантирует, что новые записи всегда будут включены в очередь перевода."
+
+#: pllat-date-filter.php
+msgid "Update Interval"
+msgstr "Интервал обновления"
+
+#: pllat-date-filter.php
+msgid "Hourly"
+msgstr "Каждый час"
+
+#: pllat-date-filter.php
+msgid "Twice Daily"
+msgstr "Дважды в день"
+
+#: pllat-date-filter.php
+msgid "Daily"
+msgstr "Ежедневно"
+
+#: pllat-date-filter.php
+msgid "Weekly"
+msgstr "Еженедельно"
+
+#: pllat-date-filter.php
+msgid "How often to update the start date automatically"
+msgstr "Как часто автоматически обновлять начальную дату"
+
+#: pllat-date-filter.php
+msgid "Update Method"
+msgstr "Метод обновления"
+
+#: pllat-date-filter.php
+msgid "Set to today minus N days"
+msgstr "Установить на сегодня минус N дней"
+
+#: pllat-date-filter.php
+msgid "Shift current date forward by N days"
+msgstr "Сдвинуть текущую дату вперед на N дней"
+
+#: pllat-date-filter.php
+msgid "Method for calculating the new start date"
+msgstr "Метод расчета новой начальной даты"
+
+#: pllat-date-filter.php
+msgid "Days to Shift"
+msgstr "Количество дней для сдвига"
+
+#: pllat-date-filter.php
+msgid "Number of days to use for date calculation (1-365)"
+msgstr "Количество дней для расчета даты (1-365)"
+
+#: pllat-date-filter.php
+msgid "Auto update:"
+msgstr "Автообновление:"
+
+#: pllat-date-filter.php
+msgid "Update interval:"
+msgstr "Интервал обновления:"
+
+#: pllat-date-filter.php
+msgid "Update method:"
+msgstr "Метод обновления:"
+
+#: pllat-date-filter.php
+msgid "Days:"
+msgstr "Дней:"
+
+#: pllat-date-filter.php
+msgid "Next update:"
+msgstr "Следующее обновление:"
+
+#: pllat-date-filter.php
+msgid "Date order:"
+msgstr "Порядок по дате:"
