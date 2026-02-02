@@ -3,7 +3,7 @@
  * Plugin Name: PLLAT Date Filter
  * Plugin URI: https://github.com/denis-ershov/pllat-date-filter
  * Description: Date filtering functionality for Polylang Automatic AI Translation. Filter posts by date range or from specific date when running bulk translations.
- * Version: 1.3.0
+ * Version: 1.4.0
  * Author: Denis Ershov
  * License: GPL3
  * Text Domain: pllat-date-filter
@@ -23,6 +23,26 @@ class PLLAT_Date_Filter {
     private $option_name = 'pllat_date_filter_settings';
     // removed legacy SQL-based detection flag
     
+    /**
+     * Кэш для настроек, чтобы избежать множественных запросов к БД
+     * @var array|null
+     */
+    private static $options_cache = null;
+    
+    /**
+     * Флаг для отслеживания применения фильтров к текущему запросу
+     * Предотвращает двойное применение фильтров
+     * Очищается после каждого запроса для предотвращения утечки памяти
+     * @var array
+     */
+    private static $applied_filters = array();
+    
+    /**
+     * Максимальное количество записей в кэше applied_filters
+     * Предотвращает неограниченный рост массива
+     */
+    private static $max_applied_filters_cache = 100;
+    
     public function __construct() {
         add_action('plugins_loaded', array($this, 'load_textdomain'));
         add_action('admin_menu', array($this, 'add_admin_menu'), 99); // Поздний приоритет чтобы Polylang успел загрузиться
@@ -30,8 +50,13 @@ class PLLAT_Date_Filter {
         add_action('admin_enqueue_scripts', array($this, 'enqueue_admin_scripts'));
         
         // Применяем фильтры через WP_Query до формирования SQL (высокий приоритет)
-        add_action('pre_get_posts', array($this, 'maybe_apply_filters'), 999);
-        add_action('parse_query', array($this, 'maybe_apply_filters'), 999);
+        // Используем очень высокий приоритет, чтобы сработать до remove_all_filters
+        add_action('pre_get_posts', array($this, 'maybe_apply_filters'), 99999);
+        add_action('parse_query', array($this, 'maybe_apply_filters'), 99999);
+        
+        // Также применяем фильтры через SQL хуки на случай, если pre_get_posts был удален
+        add_filter('posts_where', array($this, 'maybe_apply_date_filter_where'), 99999, 2);
+        add_filter('posts_orderby', array($this, 'maybe_apply_date_filter_orderby'), 99999, 2);
         
         // Добавляем ссылку на настройки в список плагинов
         add_filter('plugin_action_links_' . plugin_basename(__FILE__), array($this, 'add_settings_link'));
@@ -47,6 +72,44 @@ class PLLAT_Date_Filter {
         
         // Обновляем cron задачу после сохранения настроек
         add_action('updated_option', array($this, 'maybe_update_cron_on_option_save'), 10, 3);
+        
+        // Очищаем кэш при обновлении опций
+        add_action('updated_option', array($this, 'clear_options_cache'), 5, 1);
+        
+        // Очищаем кэш applied_filters после выполнения запроса для предотвращения утечки памяти
+        add_action('wp', array($this, 'clear_applied_filters_cache'));
+        add_action('admin_init', array($this, 'clear_applied_filters_cache'));
+    }
+    
+    /**
+     * Очищает кэш примененных фильтров для предотвращения утечки памяти
+     */
+    public function clear_applied_filters_cache() {
+        // Очищаем кэш, если он превысил лимит
+        if (count(self::$applied_filters) > self::$max_applied_filters_cache) {
+            self::$applied_filters = array();
+        }
+    }
+    
+    /**
+     * Получает настройки с кэшированием для предотвращения множественных запросов к БД
+     * @return array
+     */
+    private function get_options() {
+        // Используем статический кэш для всех экземпляров класса
+        if (self::$options_cache === null) {
+            self::$options_cache = get_option($this->option_name, array());
+        }
+        return self::$options_cache;
+    }
+    
+    /**
+     * Очищает кэш настроек
+     */
+    public function clear_options_cache($option_name = null) {
+        if ($option_name === null || $option_name === $this->option_name) {
+            self::$options_cache = null;
+        }
     }
     
     /**
@@ -245,6 +308,8 @@ class PLLAT_Date_Filter {
      */
     public function maybe_update_cron_on_option_save($option_name, $old_value, $value) {
         if ($option_name === $this->option_name) {
+            // Очищаем кэш перед обновлением cron
+            $this->clear_options_cache();
             $this->maybe_schedule_auto_update();
         }
     }
@@ -260,7 +325,7 @@ class PLLAT_Date_Filter {
      * Поле включения/выключения фильтрации
      */
     public function enabled_render() {
-        $options = get_option($this->option_name);
+        $options = $this->get_options();
         $enabled = isset($options['enabled']) ? $options['enabled'] : 0;
         ?>
         <input type='checkbox' name='<?php echo $this->option_name; ?>[enabled]' value='1' <?php checked($enabled, 1); ?>>
@@ -272,7 +337,7 @@ class PLLAT_Date_Filter {
      * Поле выбора типа фильтрации
      */
     public function filter_type_render() {
-        $options = get_option($this->option_name);
+        $options = $this->get_options();
         $filter_type = isset($options['filter_type']) ? $options['filter_type'] : 'from_date';
         ?>
         <select name='<?php echo $this->option_name; ?>[filter_type]' id='filter_type'>
@@ -287,7 +352,7 @@ class PLLAT_Date_Filter {
      * Поле начальной даты
      */
     public function start_date_render() {
-        $options = get_option($this->option_name);
+        $options = $this->get_options();
         $start_date = isset($options['start_date']) ? $options['start_date'] : '';
         ?>
         <input type='date' name='<?php echo $this->option_name; ?>[start_date]' value='<?php echo esc_attr($start_date); ?>' id='start_date' required>
@@ -299,7 +364,7 @@ class PLLAT_Date_Filter {
      * Поле конечной даты
      */
     public function end_date_render() {
-        $options = get_option($this->option_name);
+        $options = $this->get_options();
         $end_date = isset($options['end_date']) ? $options['end_date'] : '';
         ?>
         <input type='date' name='<?php echo $this->option_name; ?>[end_date]' value='<?php echo esc_attr($end_date); ?>' id='end_date'>
@@ -311,7 +376,7 @@ class PLLAT_Date_Filter {
      * Поле порядка сортировки по дате
      */
     public function date_order_render() {
-        $options = get_option($this->option_name);
+        $options = $this->get_options();
         $date_order = isset($options['date_order']) ? $options['date_order'] : 'ASC';
         ?>
         <select name='<?php echo $this->option_name; ?>[date_order]' id='date_order'>
@@ -326,7 +391,7 @@ class PLLAT_Date_Filter {
      * Поле выбора статуса постов
      */
     public function post_status_render() {
-        $options = get_option($this->option_name);
+        $options = $this->get_options();
         $post_status = isset($options['post_status']) ? $options['post_status'] : array('publish');
         
         // Если post_status не массив, делаем его массивом для обратной совместимости
@@ -362,7 +427,7 @@ class PLLAT_Date_Filter {
      * Поле выбора только непереведенных записей
      */
     public function untranslated_only_render() {
-        $options = get_option($this->option_name);
+        $options = $this->get_options();
         $untranslated_only = isset($options['untranslated_only']) ? $options['untranslated_only'] : 0;
         ?>
         <input type='checkbox' name='<?php echo $this->option_name; ?>[untranslated_only]' value='1' <?php checked($untranslated_only, 1); ?>>
@@ -375,7 +440,7 @@ class PLLAT_Date_Filter {
      * Поле отладки
      */
     public function debug_mode_render() {
-        $options = get_option($this->option_name);
+        $options = $this->get_options();
         $debug_mode = isset($options['debug_mode']) ? $options['debug_mode'] : 0;
         ?>
         <input type='checkbox' name='<?php echo $this->option_name; ?>[debug_mode]' value='1' <?php checked($debug_mode, 1); ?>>
@@ -388,7 +453,7 @@ class PLLAT_Date_Filter {
      * Поле автоматической смены начальной даты
      */
     public function auto_update_start_date_render() {
-        $options = get_option($this->option_name);
+        $options = $this->get_options();
         $auto_update = isset($options['auto_update_start_date']) ? $options['auto_update_start_date'] : 0;
         ?>
         <input type='checkbox' name='<?php echo $this->option_name; ?>[auto_update_start_date]' value='1' id='auto_update_start_date' <?php checked($auto_update, 1); ?>>
@@ -401,7 +466,7 @@ class PLLAT_Date_Filter {
      * Поле интервала обновления
      */
     public function auto_update_interval_render() {
-        $options = get_option($this->option_name);
+        $options = $this->get_options();
         $interval = isset($options['auto_update_interval']) ? $options['auto_update_interval'] : 'daily';
         ?>
         <select name='<?php echo $this->option_name; ?>[auto_update_interval]' id='auto_update_interval'>
@@ -418,7 +483,7 @@ class PLLAT_Date_Filter {
      * Поле метода обновления
      */
     public function auto_update_method_render() {
-        $options = get_option($this->option_name);
+        $options = $this->get_options();
         $method = isset($options['auto_update_method']) ? $options['auto_update_method'] : 'days_back';
         ?>
         <select name='<?php echo $this->option_name; ?>[auto_update_method]' id='auto_update_method'>
@@ -433,7 +498,7 @@ class PLLAT_Date_Filter {
      * Поле количества дней для сдвига
      */
     public function auto_update_days_render() {
-        $options = get_option($this->option_name);
+        $options = $this->get_options();
         $days = isset($options['auto_update_days']) ? intval($options['auto_update_days']) : 7;
         ?>
         <input type='number' name='<?php echo $this->option_name; ?>[auto_update_days]' value='<?php echo esc_attr($days); ?>' id='auto_update_days' min='1' max='365' step='1'>
@@ -493,7 +558,7 @@ class PLLAT_Date_Filter {
                                     
                                     <p><strong><?php _e('Current settings:', 'pllat-date-filter'); ?></strong></p>
                                     <?php
-                                    $options = get_option($this->option_name);
+                                    $options = $this->get_options();
                                     $this->display_current_settings($options);
                                     ?>
                                 </div>
@@ -690,15 +755,44 @@ class PLLAT_Date_Filter {
         if (!($query instanceof \WP_Query)) {
             return;
         }
+        
+        // Ранний выход: проверяем, не применены ли уже фильтры к этому запросу
+        $query_id = spl_object_hash($query);
+        if (isset(self::$applied_filters[$query_id])) {
+            return;
+        }
+        
+        // Ранний выход: проверяем, что запрос не пустой
+        // Это предотвращает обработку пустых или некорректных запросов
+        if ($query->get('post_type') === null && $query->get('fields') === null && empty($query->get('meta_query'))) {
+            // Это может быть пустой запрос, пропускаем его
+            return;
+        }
 
-        // Настройки
-        $options = get_option($this->option_name);
+        // Настройки (используем кэшированный метод)
+        $options = $this->get_options();
         if (empty($options) || empty($options['enabled'])) {
             return;
         }
 
         // Должны быть признаки запроса сборщика постов из основного плагина
-        if (!$this->is_pllat_translation_query($query)) {
+        // Эта проверка должна быть достаточно строгой, чтобы не затронуть обычные запросы
+        $is_pllat_query = $this->is_pllat_translation_query($query);
+        
+        // Логирование для отладки (если включен debug_mode)
+        $debug_mode = isset($options['debug_mode']) ? $options['debug_mode'] : 0;
+        if ($debug_mode && defined('WP_DEBUG') && WP_DEBUG) {
+            $meta_query = $query->get('meta_query');
+            $tax_query = $query->get('tax_query');
+            error_log('PLLAT DATE FILTER: Query check. is_pllat=' . ($is_pllat_query ? 'true' : 'false') . 
+                     ', is_admin=' . (is_admin() ? 'true' : 'false') . 
+                     ', is_ajax=' . (wp_doing_ajax() ? 'true' : 'false') . 
+                     ', is_main_query=' . (is_main_query() ? 'true' : 'false') .
+                     ', has_meta=' . (is_array($meta_query) ? 'yes' : 'no') .
+                     ', has_tax=' . (is_array($tax_query) ? 'yes' : 'no'));
+        }
+        
+        if (!$is_pllat_query) {
             return;
         }
 
@@ -726,7 +820,8 @@ class PLLAT_Date_Filter {
                 $query->set('post_status', $post_status);
             }
 
-            // Устанавливаем сортировку
+            // Устанавливаем сортировку по дате
+            // PLLAT по умолчанию использует orderby => 'ID', но мы меняем на дату для фильтрации
             $query->set('orderby', 'date');
             $query->set('order', $date_order === 'DESC' ? 'DESC' : 'ASC');
 
@@ -771,10 +866,19 @@ class PLLAT_Date_Filter {
                 }
             }
 
-            // Добавляем безопасные ограничения для предотвращения зависания
-            $query->set('posts_per_page', 100); // Ограничиваем количество постов за раз
-            $query->set('no_found_rows', true); // Отключаем подсчет общего количества
+            // НЕ изменяем posts_per_page и numberposts - плагин сам управляет bulk size
+            // PLLAT использует numberposts для ограничения количества записей
+            
+            // Устанавливаем no_found_rows для оптимизации запросов PLLAT
+            // Это безопасно, так как мы уже проверили, что это запрос PLLAT
+            // Но только если он еще не установлен
+            if ($query->get('no_found_rows') === null) {
+                $query->set('no_found_rows', true); // Отключаем подсчет общего количества
+            }
 
+            // Помечаем запрос как обработанный
+            self::$applied_filters[$query_id] = true;
+            
             if ($debug_mode && defined('WP_DEBUG') && WP_DEBUG) {
                 error_log('PLLAT DATE FILTER: applied filters successfully. date_query=' . json_encode($query->get('date_query')) . ', post_status=' . json_encode($query->get('post_status')) . ', order=' . $query->get('order') . ', untranslated_only=' . $untranslated_only . ', posts_per_page=' . $query->get('posts_per_page'));
             }
@@ -791,46 +895,194 @@ class PLLAT_Date_Filter {
 
     /**
      * Определяем, что это запрос сбора постов для перевода в PLLAT
+     * На основе анализа кода Bulk_Post_Manager.php
+     * Оптимизировано для предотвращения утечек памяти
      */
     private function is_pllat_translation_query(\WP_Query $query): bool {
-        // Более мягкая проверка - ищем основные признаки PLLAT запроса
-        
-        // Проверяем meta_query на ключ исключения перевода
+        // Основной признак PLLAT: наличие meta_query с ключом _pllat_exclude_from_translation
+        // Это используется в Bulk_Post_Manager::get_all_ids() и get_all_ids_with_queue()
         $meta_query = $query->get('meta_query');
-        $has_pllat_meta = false;
         
         if (is_array($meta_query)) {
-            foreach ($meta_query as $maybe_group) {
-                if (is_array($maybe_group)) {
-                    foreach ($maybe_group as $cond) {
-                        if (is_array($cond) && isset($cond['key']) && $cond['key'] === '_pllat_exclude_from_translation') {
-                            $has_pllat_meta = true;
-                            break 2;
+            // Используем итеративный подход вместо рекурсии для предотвращения утечек памяти
+            $stack = array($meta_query);
+            
+            while (!empty($stack)) {
+                $current = array_pop($stack);
+                
+                if (!is_array($current)) {
+                    continue;
+                }
+                
+                foreach ($current as $item) {
+                    if (is_array($item)) {
+                        // Проверяем наличие ключа _pllat_exclude_from_translation
+                        // PLLAT использует его с compare => 'NOT EXISTS' или 'EXISTS'
+                        if (isset($item['key']) && $item['key'] === '_pllat_exclude_from_translation') {
+                            return true; // Ранний выход при нахождении
                         }
+                        // Добавляем вложенные массивы в стек для обработки
+                        $stack[] = $item;
                     }
                 }
             }
         }
         
-        // Если есть PLLAT meta_query, считаем это запросом перевода
-        if ($has_pllat_meta) {
+        // Дополнительные признаки PLLAT запроса (из анализа Bulk_Post_Manager.php):
+        // - fields => 'ids' (PLLAT запрашивает только ID)
+        // - numberposts установлен (bulk size)
+        // - lang параметр установлен (Polylang язык)
+        // - orderby => 'ID' и order => 'ASC'
+        
+        $fields = $query->get('fields');
+        $numberposts = $query->get('numberposts');
+        $lang = $query->get('lang');
+        $orderby = $query->get('orderby');
+        $order = $query->get('order');
+        
+        // Проверяем комбинацию признаков PLLAT
+        $has_pllat_signs = false;
+        
+        // Если fields = 'ids' И numberposts установлен И lang установлен
+        if ($fields === 'ids' && !empty($numberposts) && !empty($lang)) {
+            // Дополнительная проверка: orderby должен быть 'ID'
+            if ($orderby === 'ID' || (is_array($orderby) && isset($orderby['ID']))) {
+                $has_pllat_signs = true;
+            }
+        }
+        
+        // Если есть признаки PLLAT, но это не основной запрос на фронтенде
+        if ($has_pllat_signs) {
+            // Защита от применения к обычным запросам на фронтенде
+            if (is_main_query() && !is_admin() && !wp_doing_ajax()) {
+                return false;
+            }
             return true;
         }
         
-        // Дополнительная проверка на tax_query с языком (если есть)
-        $tax_query = $query->get('tax_query');
-        if (is_array($tax_query)) {
-            foreach ($tax_query as $cond) {
-                if (is_array($cond) && isset($cond['taxonomy']) && $cond['taxonomy'] === 'language') {
-                    // Если есть таксономия языка И no_found_rows, то это скорее всего PLLAT
-                    if ($query->get('no_found_rows') === true) {
-                        return true;
-                    }
-                }
+        return false;
+    }
+    
+    /**
+     * Применяем фильтр даты через SQL WHERE (резервный метод)
+     * Используется если pre_get_posts был удален через remove_all_filters
+     */
+    public function maybe_apply_date_filter_where($where, $query) {
+        // Проверяем, что это WP_Query
+        if (!($query instanceof \WP_Query)) {
+            return $where;
+        }
+        
+        // Ранний выход: проверяем, не применены ли уже фильтры
+        $query_id = spl_object_hash($query);
+        if (isset(self::$applied_filters[$query_id])) {
+            return $where;
+        }
+        
+        // Проверяем настройки (используем кэшированный метод)
+        $options = $this->get_options();
+        if (empty($options) || empty($options['enabled'])) {
+            return $where;
+        }
+        
+        // Проверяем, что это PLLAT запрос
+        if (!$this->is_pllat_translation_query($query)) {
+            return $where;
+        }
+        
+        $start_date = $options['start_date'] ?? '';
+        if (empty($start_date)) {
+            return $where;
+        }
+        
+        // Проверяем, не применен ли уже фильтр через pre_get_posts
+        $date_query = $query->get('date_query');
+        if (!empty($date_query)) {
+            // Фильтр уже применен через pre_get_posts
+            self::$applied_filters[$query_id] = true;
+            return $where;
+        }
+        
+        // Применяем фильтр через SQL
+        // Используем глобальную переменную только один раз
+        global $wpdb;
+        $filter_type = $options['filter_type'] ?? 'from_date';
+        $end_date = $options['end_date'] ?? '';
+        
+        // Безопасная подготовка дат
+        $start_datetime = $start_date . ' 00:00:00';
+        $date_condition = '';
+        
+        if ($filter_type === 'date_range' && !empty($end_date)) {
+            $end_datetime = $end_date . ' 23:59:59';
+            $date_condition = $wpdb->prepare(
+                " AND {$wpdb->posts}.post_date >= %s AND {$wpdb->posts}.post_date <= %s",
+                $start_datetime,
+                $end_datetime
+            );
+        } else {
+            $date_condition = $wpdb->prepare(
+                " AND {$wpdb->posts}.post_date >= %s",
+                $start_datetime
+            );
+        }
+        
+        // Помечаем запрос как обработанный
+        self::$applied_filters[$query_id] = true;
+        
+        return $where . $date_condition;
+    }
+    
+    /**
+     * Применяем сортировку по дате через SQL ORDER BY (резервный метод)
+     */
+    public function maybe_apply_date_filter_orderby($orderby, $query) {
+        // Проверяем, что это WP_Query
+        if (!($query instanceof \WP_Query)) {
+            return $orderby;
+        }
+        
+        // Ранний выход: если фильтры уже применены, сортировка тоже должна быть применена
+        $query_id = spl_object_hash($query);
+        if (isset(self::$applied_filters[$query_id])) {
+            // Проверяем, не применена ли уже сортировка через pre_get_posts
+            $current_orderby = $query->get('orderby');
+            if ($current_orderby === 'date') {
+                return $orderby;
             }
         }
         
-        return false;
+        // Проверяем настройки (используем кэшированный метод)
+        $options = $this->get_options();
+        if (empty($options) || empty($options['enabled'])) {
+            return $orderby;
+        }
+        
+        // Проверяем, что это PLLAT запрос
+        if (!$this->is_pllat_translation_query($query)) {
+            return $orderby;
+        }
+        
+        // Проверяем, не применена ли уже сортировка через pre_get_posts
+        $current_orderby = $query->get('orderby');
+        if ($current_orderby === 'date') {
+            // Сортировка уже применена через pre_get_posts
+            return $orderby;
+        }
+        
+        // Применяем сортировку по дате
+        // Используем глобальную переменную только один раз
+        global $wpdb;
+        $date_order = strtoupper($options['date_order'] ?? 'ASC');
+        $order_direction = ($date_order === 'DESC') ? 'DESC' : 'ASC';
+        $date_orderby = "{$wpdb->posts}.post_date {$order_direction}";
+        
+        // Если уже есть orderby, добавляем нашу сортировку
+        if (!empty($orderby) && is_string($orderby)) {
+            return $date_orderby . ', ' . $orderby;
+        }
+        
+        return $date_orderby;
     }
     
     /**
@@ -870,7 +1122,7 @@ class PLLAT_Date_Filter {
      * Проверяет настройки и регистрирует/удаляет cron задачу для автоматической смены даты
      */
     public function maybe_schedule_auto_update() {
-        $options = get_option($this->option_name);
+        $options = $this->get_options();
         
         if (empty($options) || empty($options['auto_update_start_date'])) {
             // Если автоматическое обновление отключено, удаляем cron задачу
@@ -903,7 +1155,7 @@ class PLLAT_Date_Filter {
      * Автоматически обновляет начальную дату согласно настройкам
      */
     public function auto_update_start_date() {
-        $options = get_option($this->option_name);
+        $options = $this->get_options();
         
         // Проверяем, включено ли автоматическое обновление
         if (empty($options) || empty($options['auto_update_start_date'])) {
@@ -945,6 +1197,9 @@ class PLLAT_Date_Filter {
         $options['start_date'] = $new_start_date;
         update_option($this->option_name, $options);
         
+        // Очищаем кэш после обновления
+        $this->clear_options_cache();
+        
         // Логируем обновление
         if ($debug_mode && defined('WP_DEBUG') && WP_DEBUG) {
             error_log(sprintf(
@@ -984,6 +1239,7 @@ function pllat_date_filter_activate() {
     add_option('pllat_date_filter_settings', $default_options);
     
     // Регистрируем cron задачу, если автоматическое обновление включено
+    // Используем прямой вызов get_option здесь, так как кэш еще не инициализирован
     $options = get_option('pllat_date_filter_settings');
     if (!empty($options['auto_update_start_date'])) {
         $interval = isset($options['auto_update_interval']) ? $options['auto_update_interval'] : 'daily';
